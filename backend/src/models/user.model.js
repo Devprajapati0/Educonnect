@@ -2,19 +2,52 @@ import mongoose, { model, Schema } from 'mongoose';
 
 const userSchema = new Schema({
   institution: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Institution',
-    required: true,
+    _id: {
+            type: mongoose.Schema.Types.ObjectId
+          },
+    fullname: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    subdomain: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    subscription: {
+      plan: {
+        type: String,
+        default: 'free',
+      },
+      startDate: {
+        type: Date,
+        default: Date.now,
+      },
+      endDate: {
+        type: Date,
+      },
+      isActive: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    logo: {
+      type: String,
+      required: false,
+    },
   },
   rollnumber: {
     type: String,
-    required: true,
-    unique: true,
+    required: false,
   },
   email:{
     type: String,
     required: true,
-    unique: true,
   },
   password: {
     type: String,
@@ -33,7 +66,7 @@ const userSchema = new Schema({
     type: String,
     default: null,
   },
-  publickey:{
+  publicKey:{
     type: String,
     default: null,
     required: false,

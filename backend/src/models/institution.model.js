@@ -1,49 +1,61 @@
-import mongoose,{model,Schema} from 'mongoose';                                                
+import mongoose, { model, Schema } from 'mongoose';
 
 const institutionSchema = new Schema({
-    fullname: {
-        type: String,
-        required: true,
-        unique: true
+  fullname: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,       // ✨ unique email
+    lowercase: true,    // ✨ store all emails lowercase
+    index: true         // ✨ make index for fast lookup
+  },
+  type: {
+    type: String,
+    enum: ['school', 'other', 'university'],
+    required: true,
+    default: 'university'
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  subdomain: {
+    type: String,
+    required: true,
+    unique: true,       // ✨ unique subdomain
+    lowercase: true,    // ✨ optional, if you want
+    index: true         // ✨ make index for fast lookup
+  },
+  subscription: {
+    startDate: {
+      type: Date,
+      default: Date.now
     },
-    shortname: {
-        type: String,
-        required: true
+    endDate: {
+      type: Date
     },
-    email: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    password: {
-        type: String,
-        required: true
-    },
-    subscription: {
-        plan: {
-            type: String,
-            default: 'free'
-        },
-        startDate: {
-            type: Date,
-            default: Date.now
-        },
-        endDate: {
-            type: Date
-        },
-        isActive: {
-            type: Boolean,
-            default: false
-        }
-    },
-    logo: {
-        type: String,
-        required:false
-    },
-    createdAt:{
-      type : Date,
-      default : Date.now
+    isActive: {
+      type: Boolean,
+      default: false
     }
+  },
+  logo: {
+    type: String,
+    required: false,
+    default: null
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  admin:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+
 });
 
-export const User = mongoose.models.Institution || model('Institution', institutionSchema);
+export const Institution = mongoose.models.Institution || model('Institution', institutionSchema);

@@ -20,7 +20,7 @@ try {
         })
 
         fs.unlinkSync(loacllink)
-         console.log("fileuploadedwwww",fileuploaded)
+        //  console.log("fileuploadedwwww",fileuploaded)
         return fileuploaded
 } catch (error) {
     fs.unlinkSync(loacllink)
