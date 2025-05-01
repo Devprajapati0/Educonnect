@@ -20,6 +20,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { FRONTEND_URL } from "../../helpers/url.js";
 import Header from "./Header.jsx";
+import { Business } from "@mui/icons-material";
 
 export default function LoginPage() {
   const [form, setForm] = useState({
@@ -41,7 +42,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${FRONTEND_URL}institution/login-institution`, form);
+      const res = await axios.post(`${FRONTEND_URL}institution/login-institution`, form,{
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
       const data = res.data;
 
       if (data.success) {

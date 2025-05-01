@@ -1,11 +1,39 @@
 import { loginSchema, signupSchema, uniqueSubdoamin } from "../schemas/institution.schema.js"
 import { asynhandler } from "../utils/asynchandler.js"
-import { apiresponse } from "../utils/apiresponse.js"
+import { apiresponse } from "../utils/apiResponse.js"
 import { Institution } from "../models/institution.model.js"
 import { stripe } from "../helpers/stripe.js"
 import bcrypt from "bcryptjs"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../helpers/cloudinary.js"
+import { generateAccessToken } from "../helpers/jwt.js"
+
+const generateToken = async(instituteId) => {
+  try {
+    const instituteExisted = await Institution.findById(instituteId);
+    if (!instituteExisted) {
+      return res.json(
+        new apiresponse(400, null, "Signup to have an account")
+    );
+    }
+    // console.log("instituteExisted", instituteExisted)
+
+    const institutetoken = generateAccessToken({
+      _id: instituteExisted._id,
+      username: instituteExisted.fullname,
+      email: instituteExisted.email
+    })
+
+    // console.log("institutetoken", institutetoken)
+
+    return institutetoken;
+  } catch (error) {
+    console.error("Error generating token:", error);
+    return res.json(
+      new apiresponse(500, null, "Server error during token generation")
+    );
+  }
+}
 
 const uniqueInstitutionSubdomain = asynhandler(async (req, res) => {
     try {
@@ -42,7 +70,6 @@ const uniqueInstitutionSubdomain = asynhandler(async (req, res) => {
         );
     }
 });
-
 
 const checkOutSession = asynhandler(async(req,res) => {
     try {
@@ -239,6 +266,7 @@ const institutionLogin = asynhandler(async (req, res) => {
                 new apiresponse(400, null, "All fields are required")
             );
         }
+        // console.log("dddddd",req.body)
 
         const { email, password, fullname } = loginschema.data;
 
@@ -258,14 +286,25 @@ const institutionLogin = asynhandler(async (req, res) => {
                 new apiresponse(400, null, "Invalid credentials")
             );
         }
+        if(institution.fullname !== fullname){
+            return res.json(
+                new apiresponse(400, null, "Invalid Institute name")
+            );
+        }
 
         if (!institution.subscription.isActive) {
             return res.json(
                 new apiresponse(400, null, "Signup to have an account")
             );
         }
-
-        return res.json(
+        // console.log("institution", institution)
+        const institutetoken = await generateToken(institution._id);
+        console.log("token",institutetoken)
+        const options = {
+          httpOnly: true,
+          secure:true,
+        }
+        return res.cookie("institutetoken",institutetoken,options).json(
             new apiresponse(200, institution, "Login successful")
         );
 
