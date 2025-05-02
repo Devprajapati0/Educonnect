@@ -1,4 +1,4 @@
-import { loginSchema, signupSchema, uniqueSubdoamin } from "../schemas/institution.schema.js"
+import { loginSchema, signupSchema, uniqueSubdoamin, updateInstituteProfileSchema } from "../schemas/institution.schema.js"
 import { asynhandler } from "../utils/asynchandler.js"
 import { apiresponse } from "../utils/apiResponse.js"
 import { Institution } from "../models/institution.model.js"
@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../helpers/cloudinary.js"
 import { generateAccessToken } from "../helpers/jwt.js"
+
 
 const generateToken = async(instituteId) => {
   try {
@@ -37,7 +38,7 @@ const generateToken = async(instituteId) => {
 
 const uniqueInstitutionSubdomain = asynhandler(async (req, res) => {
     try {
-      console.log(req.body)
+      // console.log(req.body)
         const subDoaminSchema = uniqueSubdoamin.safeParse(req.body);
         if (!subDoaminSchema.success) {
             return res.json(
@@ -73,28 +74,36 @@ const uniqueInstitutionSubdomain = asynhandler(async (req, res) => {
 
 const checkOutSession = asynhandler(async(req,res) => {
     try {
+       const {data} = req.body;
+        // console.log("data",data)
+       
         const priceInPaise = Number(process.env.PRO_PLAN_PRICE); // CONVERT string to number!
-       console.log(priceInPaise)
-        const session = await stripe.checkout.sessions.create({
-          line_items: [
-            {
-              price_data: {
-                currency: 'inr',
-                product_data: {
-                  name: 'Pro Plan',
-                  description: 'Access to all premium features for 1 year',
-                },
-                unit_amount: priceInPaise, 
+      //  console.log(priceInPaise)
+       const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price_data: {
+              currency: 'inr',
+              product_data: {
+                name: 'Pro Plan',
+                description: 'Access to all premium features for 1 year',
               },
-              quantity: 1,
+              unit_amount: priceInPaise, 
             },
-          ],
-          mode: 'payment',
-          success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${process.env.FRONTEND_URL}/cancel`,
-          
-        });
-        console.log(session)
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        metadata: {
+          institutionId: data._id.toString(), // always convert ObjectId to string
+          institutionName: data.fullname,
+          institutionEmail: data.email,
+          institutionSubdomain: data.subdomain,
+        },
+        success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL}/cancel`,
+      });
+        // console.log(session)
     
         return res.json(new apiresponse(200, session, "Session created successfully"));
       } catch (error) {
@@ -106,8 +115,9 @@ const checkOutSession = asynhandler(async(req,res) => {
 const checkoutSuccess = asynhandler(async(req,res) => {
     try {
         const {sessionid} = req.body
-        console.log(sessionid)
+        // console.log(sessionid)
         const session = await stripe.checkout.sessions.retrieve(sessionid)
+        // console.log("session",session)
 
         if(session.payment_status !== 'paid'){
             if(session)
@@ -119,6 +129,26 @@ const checkoutSuccess = asynhandler(async(req,res) => {
                 )
             )
         }
+       
+        const { institutionId, institutionName, institutionEmail, institutionSubdomain } = session.metadata;
+        const instituteData = await Institution.findById(institutionId);
+        if (!instituteData) {
+            return res.json(
+                new apiresponse(
+                    400,
+                    null,
+                    "Institution not found"
+                )
+            )
+        }
+        // Update the subscription status
+        instituteData.subscription = {
+            isActive: true,
+            plan: "pro",
+            startDate: new Date(),
+            endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // Add 1 year to the current date
+        };
+        await instituteData.save();
 
         return res.json(
             new apiresponse(
@@ -164,6 +194,7 @@ const institutionSignup = asynhandler(async (req, res) => {
         existingInstitution.password = await bcrypt.hash(password, 10);
         existingInstitution.subdomain = subdomain;
         existingInstitution.type = type;
+        
 
         if (req.file) {
             const url = req.file.path || null;
@@ -187,7 +218,7 @@ const institutionSignup = asynhandler(async (req, res) => {
                 subdomain: existingInstitution.subdomain,
                 subscription: existingInstitution.subscription,
                 logo: existingInstitution.logo || null,
-            };  
+            }; 
             
           await adminUser.save();
         }
@@ -203,7 +234,7 @@ const institutionSignup = asynhandler(async (req, res) => {
       if (req.file) {
         const url = req.file.path || null;
          photo = await uploadOnCloudinary(url);
-         console.log("photo", photo)
+        //  console.log("photo", photo)
     }
       const newInstitution = new Institution({
         fullname,
@@ -237,10 +268,12 @@ const institutionSignup = asynhandler(async (req, res) => {
       });
 
       await newAdminUser.save();
+      console.log("newAdminUser", newAdminUser);
 
       // Link admin user to institution
       newInstitution.admin = newAdminUser._id;
       institution = await newInstitution.save();
+      console.log("institution", institution);
     }
 
     return res
@@ -321,8 +354,118 @@ const institutionLogin = asynhandler(async (req, res) => {
     }
 });
 
+const instituteLogout = asynhandler(async (req, res) => {
+    try {
+      if(!req.institute){
+        return res.json(
+            new apiresponse(400, null, "No account found with this email and subdomain")
+        );
+      }
+        const options = {
+            httpOnly: true,
+            secure:true,
+        }
+        return res.clearCookie("institutetoken",options).json(
+            new apiresponse(200, null, "Logout successful")
+        );
+    } catch (error) {
+        console.error(error);
+        return res.json(
+            new apiresponse(500, null, "Server error during logout")
+        );
+    }
+});
+
+const instituteProfile = asynhandler(async(req,res) => {
+    try {
+        if(!req.institute){
+            return res.json(
+                new apiresponse(400, null, "No account found with this email and subdomain")
+            );
+        }
+        const institute = req.institute;
+        // console.log("institute",institute)
+        console.log("institute", institute)
+        const admin = await User.findById(institute.admin).select('-password');
+        if(!admin){
+            return res.json(
+                new apiresponse(400, null, "No account found with this email and subdomain")
+            );
+        }
+        
+        return res.json(
+            new apiresponse(200, {institute,admin}, "Institute profile")
+        )
+    } catch (error) {
+        console.error(error);
+        return res.json(
+            new apiresponse(500, null, "Server error during logout")
+        );
+    }
+})
+const updateProfile = asynhandler(async (req, res) => {
+  if (!req.institute) {
+    return res.json(
+      new apiresponse(400, null, 'No account found with this email and subdomain.')
+    );
+  }
+
+  const institute = await Institution.findById(req.institute._id);
+  console.log("institute", institute)
+
+  // Validate incoming body
+  const parsed = updateInstituteProfileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.json(
+      new apiresponse(400, null, 'All required fields must be filled out correctly.')
+    );
+  }
+
+  const { fullname, email, type, subdomain, currentPassword, newPassword } = parsed.data;
+
+
+  // Update profile fields
+  institute.fullname = fullname || institute.fullname;
+  institute.email = email || institute.email;
+  institute.type = type || institute.type;
+  institute.subdomain = subdomain || institute.subdomain;
+
+  // Optional logo upload
+  if (req.file) {
+    const url = req.file.path;
+    const uploaded = await uploadOnCloudinary(url);
+    if (uploaded?.url) {
+      institute.logo = uploaded.url || institute.logo;
+    }
+  }
+
+  // Optional password update
+  if (currentPassword || newPassword) {
+    if (!currentPassword || !newPassword) {
+      return res.json(
+        new apiresponse(400, null, 'Both current and new passwords are required.')
+      );
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, institute.password);
+    if (!isMatch) {
+      return res.json(
+        new apiresponse(401, null, 'Incorrect current password.')
+      );
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    institute.password = hashed;
+  }
+
+
+  await institute.save();
+
+  return res.json(
+    new apiresponse(200,institute, 'Institute profile updated successfully.')
+  );
+});
 
 
 
-
-export { uniqueInstitutionSubdomain,checkOutSession,checkoutSuccess,institutionSignup,institutionLogin }
+export { uniqueInstitutionSubdomain,checkOutSession,checkoutSuccess,institutionSignup,institutionLogin,instituteLogout,instituteProfile,updateProfile }

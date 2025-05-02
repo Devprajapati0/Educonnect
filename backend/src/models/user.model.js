@@ -44,6 +44,8 @@ const userSchema = new Schema({
   rollnumber: {
     type: String,
     required: false,
+    // default:Math.random(),,
+    default:'0'
   },
   email:{
     type: String,

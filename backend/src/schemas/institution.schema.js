@@ -69,3 +69,15 @@ export const loginSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" })
     .max(100, { message: "Password must be at most 100 characters" }),
 });
+
+export const updateInstituteProfileSchema = z.object({
+  fullname: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Invalid email address'),
+  type: z.enum(['school', 'university', 'other'], {
+    errorMap: () => ({ message: 'Invalid institution type' }),
+  }),
+  subdomain: z.string().min(1, 'Subdomain is required'),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().optional(),
+  
+})

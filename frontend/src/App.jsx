@@ -9,6 +9,8 @@ const About = lazy(() => import('./pages/instituiton/About.jsx'))
 const Signup = lazy(() => import('./pages/instituiton/Signup.jsx'))
 const Success = lazy(() => import('./pages/instituiton/Success.jsx'))
 const Login = lazy(() => import('./pages/instituiton/Login.jsx'))
+const Edit = lazy(() => import('./pages/instituiton/Edit.jsx'))
+const Profile = lazy(() => import('./pages/instituiton/Profile.jsx'))
 const App = () => {
   return (
     <Router>
@@ -25,6 +27,8 @@ const App = () => {
             <Route path="/signup" element={<Signup />} />
             <Route path="/success" element={<Success />} />
             <Route path='/login' element={<Login />} />
+            <Route path='/profile' element={<Profile/>} />
+            <Route path='/profile/edit' element={<Edit/>} />
             
           </Routes>
         {/* </Suspense> */}

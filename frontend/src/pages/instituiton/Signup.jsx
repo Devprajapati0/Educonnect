@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
+import {useDispatch} from 'react-redux'
 import {
   Card,
   CardContent,
@@ -33,10 +33,13 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 import { FRONTEND_URL } from "../../helpers/url.js";
 import { Loader } from "lucide-react";
 import Header from "./Header.jsx";
+import { setInstitute} from "../../store/slice/instituteSlice.js";
 
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch()
+  
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -65,7 +68,7 @@ export default function SignupPage() {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    console.log("file", file);
+    // console.log("file", file);
     if (file) {
       setImage(URL.createObjectURL(file));
       setForm((prev) => ({ ...prev, logo: file }));
@@ -108,7 +111,7 @@ export default function SignupPage() {
         });
 
         const publicKey = await generateKeyPair()
-        console.log("publicKey", publicKey)
+        // console.log("publicKey", publicKey)
         formData.append('publicKey', publicKey)
         // console.log("formData", formData)
 
@@ -122,14 +125,24 @@ export default function SignupPage() {
           }
         );
 
-        console.log("Success:", response.data);
+        dispatch(setInstitute({
+          fullname: form.fullname,
+          email: form.email,
+          type: form.type,
+          subdomain: form.subdomain,
+          _id: response?.data?.data?._id,
+        }))
+
+        // console.log("Success:", response.data);
         if(response.data.success == false){
           toast.error(response.data.message)
           return
         }
         else{
           const stripe   = await stripePromise;
-          const data = await axios.post(`${FRONTEND_URL}institution/checkout-session`)
+          const data = await axios.post(`${FRONTEND_URL}institution/checkout-session`,{
+            data:response.data.data
+          })
           console.log(data)
           const session = data.data.data
           const result = await stripe.redirectToCheckout({
@@ -138,7 +151,8 @@ export default function SignupPage() {
            if (result.error) {
                toast.error(result.error.message)
            }
-
+           
+          
            toast.success("Signup successful! ");
         }
         setisSubmit(false)

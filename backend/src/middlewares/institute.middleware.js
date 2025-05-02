@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
-import asynhandler from '../utils/asynchandler.js';
-import apiResponse from '../utils/apiResponse.js';
+import {asynhandler} from '../utils/asynchandler.js';
+import {apiresponse} from '../utils/apiResponse.js';
 import dotenv from 'dotenv';
 import { Institution } from '../models/institution.model.js';
 dotenv.config();
@@ -12,7 +12,7 @@ const instituteAuthenticator = asynhandler(async(req,res,next) => {
         // console.log("1111111111111111111111111111111111111n b bha sbhxhsgchdbhjxbhxbhdchbhbbchbdxhdhjjhdxbbhdcbhjhahbhscbd chbhcdhbc jdbchjbdjch dhcbijdcjhbdhjchdcbdjcbdcindjd jcdjcjdcbjdc")
         if(!instituteToken) {
             return res.json(
-                new apiResponse(401, null,"access")
+                new apiresponse(401, null,"Unauthorized Access login again")
             )
         }
     
@@ -20,7 +20,7 @@ const instituteAuthenticator = asynhandler(async(req,res,next) => {
         // console124_DEV.log("decode",decode)
         if(!decode) {
             return res.json(
-                new apiResponse(401, null,"Unauthorized Access login again")
+                new apiresponse(401, null,"Unauthorized Access login again")
             )
         }
         // console.log("3")
@@ -28,14 +28,14 @@ const instituteAuthenticator = asynhandler(async(req,res,next) => {
         const user = await Institution.findById(decode._id).select('-password -refreshToken');
         if(!user) {
             return res.json(
-                new apiResponse(401, null,"Unauthorized Access login again")
+                new apiresponse(401, null,"Unauthorized Access login again")
             )
         }
         req.institute = user;
         next();
     } catch (error) {
         return res.json(
-            new apiResponse(401, null,"Unauthorized Access login again")
+            new apiresponse(401, null,"Unauthorized Access login again")
         )
     }
 })

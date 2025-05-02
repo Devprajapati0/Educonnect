@@ -21,8 +21,11 @@ import toast from "react-hot-toast";
 import { FRONTEND_URL } from "../../helpers/url.js";
 import Header from "./Header.jsx";
 import { Business } from "@mui/icons-material";
+import { useDispatch } from "react-redux";
+import { setInstitute, setIsActive } from "../../store/slice/instituteSlice.js";
 
 export default function LoginPage() {
+  const dispatch = useDispatch();
   const [form, setForm] = useState({
     fullname: "",
     email: "",
@@ -48,7 +51,16 @@ export default function LoginPage() {
         },
         withCredentials: true,
       });
+      
       const data = res.data;
+       dispatch(setInstitute({
+                fullname: data.data.fullname,
+                email: data.data.email,
+                type: data.data.type,
+                subdomain: data.data.subdomain,
+                _id:data.data?._id,
+              }))
+      dispatch(setIsActive(true));
 
       if (data.success) {
         toast.success("Logged in successfully!");
@@ -56,7 +68,7 @@ export default function LoginPage() {
         // localStorage.setItem("token", data.token);
 
         // Navigate to dashboard or home
-        navigate("/dashboard");
+        navigate("/");
       } else {
         toast.error(data.message || "Invalid credentials");
       }

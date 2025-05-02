@@ -30,17 +30,22 @@ const institutionSchema = new Schema({
     index: true         // ✨ make index for fast lookup
   },
   subscription: {
-    startDate: {
-      type: Date,
-      default: Date.now
-    },
-    endDate: {
-      type: Date
-    },
-    isActive: {
-      type: Boolean,
-      default: false
-    }
+      plan: {
+        type: String,
+        default: 'free',
+      },
+      startDate: {
+        type: Date,
+        default: Date.now,
+      },
+      endDate: {
+        type: Date,
+      },
+      isActive: {
+        type: Boolean,
+        default: false,
+      },
+      
   },
   logo: {
     type: String,

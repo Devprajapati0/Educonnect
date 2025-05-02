@@ -5,16 +5,26 @@ import axios from "axios";
 import Confetti from "react-confetti";
 import { FRONTEND_URL } from "../../helpers/url";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { setIsActive } from "../../store/slice/instituteSlice";
 
 const PurchaseSuccessPage = () => {
 	const [isProcessing, setIsProcessing] = useState(true);
 	const [error, setError] = useState(null);
-
+    const dispatch = useDispatch();
 	useEffect(() => {
 		const handleCheckoutSuccess = async (sessionid) => {
 			try {
 				const resp = await axios.post(`${FRONTEND_URL}institution/checkout-success`, { sessionid });
 				console.log("Success response:", resp);
+				if (resp.status === 200) {
+					toast.success("Checkout finalized successfully!");
+					dispatch(setIsActive(true));
+				} else {
+					toast.error("Failed to finalize checkout");
+				}
+
+
 			} catch (error) {
 				toast.error("Failed to finalize checkout: " + (error?.response?.data?.message || error.message));
 			} finally {
@@ -69,11 +79,11 @@ const PurchaseSuccessPage = () => {
 						</button>
 
 						<Link
-							to="/"
+							to="/login"
 							className="w-full bg-gray-700 hover:bg-gray-600 text-blue-400 font-bold py-2 px-4 
 							rounded-lg transition duration-300 flex items-center justify-center"
 						>
-							Home
+							Login
 							<ArrowRight className="ml-2" size={18} />
 						</Link>
 					</div>
