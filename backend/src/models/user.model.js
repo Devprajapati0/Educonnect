@@ -8,16 +8,14 @@ const userSchema = new Schema({
     fullname: {
       type: String,
       required: true,
-    },
+   },
     email: {
       type: String,
       required: true,
-      unique: true,
     },
     subdomain: {
       type: String,
       required: true,
-      unique: true,
     },
     subscription: {
       plan: {
@@ -71,6 +69,22 @@ const userSchema = new Schema({
   publicKey:{
     type: String,
     default: null,
+    required: false,
+  },
+  parentofemail:{
+    type:String,
+    required: false,
+  },
+  parentofname:{
+    type:String,
+    required:false
+  },
+  department: {
+    type: String,
+    required: false,
+  },
+  batch:{
+    type: String,
     required: false,
   },
   createdAt: {

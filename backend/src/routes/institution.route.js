@@ -3,7 +3,7 @@ import { uniqueInstitutionSubdomain,institutionSignup,checkOutSession,checkoutSu
 import { upload } from '../middlewares/multer.middleware.js';
 import instituteAuthenticator from '../middlewares/institute.middleware.js';
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
 router.route('/unique-subdomain').post(uniqueInstitutionSubdomain);
 router.route('/checkout-session').post(checkOutSession);

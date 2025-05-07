@@ -8,9 +8,6 @@ const institutionSchema = new Schema({
   email: {
     type: String,
     required: true,
-    unique: true,       // ✨ unique email
-    lowercase: true,    // ✨ store all emails lowercase
-    index: true         // ✨ make index for fast lookup
   },
   type: {
     type: String,
@@ -25,9 +22,6 @@ const institutionSchema = new Schema({
   subdomain: {
     type: String,
     required: true,
-    unique: true,       // ✨ unique subdomain
-    lowercase: true,    // ✨ optional, if you want
-    index: true         // ✨ make index for fast lookup
   },
   subscription: {
       plan: {
@@ -61,6 +55,7 @@ const institutionSchema = new Schema({
     ref: 'User'
   },
 
-});
+}); 
 
 export const Institution = mongoose.models.Institution || model('Institution', institutionSchema);
+ 

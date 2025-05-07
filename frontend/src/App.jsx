@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
+// import AdminLayout from './pages/admin/AdminLayout.jsx'
 
 // import Order from './Order.jsx'
 const Home = lazy(() => import('./pages/instituiton/Home.jsx'))
@@ -11,6 +12,12 @@ const Success = lazy(() => import('./pages/instituiton/Success.jsx'))
 const Login = lazy(() => import('./pages/instituiton/Login.jsx'))
 const Edit = lazy(() => import('./pages/instituiton/Edit.jsx'))
 const Profile = lazy(() => import('./pages/instituiton/Profile.jsx'))
+const Frontpage = lazy(() => import('./pages/common/Frontpage.jsx'))
+const Adminchat = lazy(() => import('./pages/admin/Adminchat.jsx'))
+const Dashboard = lazy(() => import('./pages/admin/Dashboard.jsx'))
+const Adduser = lazy(() => import('./pages/admin/Adduser.jsx'))
+const Forgotpassword = lazy(() => import('./pages/common/Forgotpassword.jsx'))
+// const Adminchat = lazy(() => import('./pages/admin/Adminchat.jsx'))
 const App = () => {
   return (
     <Router>
@@ -29,8 +36,16 @@ const App = () => {
             <Route path='/login' element={<Login />} />
             <Route path='/profile' element={<Profile/>} />
             <Route path='/profile/edit' element={<Edit/>} />
+
+            <Route path = '/:subdomain/login' element={<Frontpage/>}/>
+            <Route path = '/:subdomain/forgot-password' element={<Forgotpassword/>}/>
+            <Route path = '/:subdomain/admin/chat' element={<Adminchat/>}/>
+            <Route path = '/:subdomain/admin/chat/:id' element={<Adminchat/>}/>
+            <Route path = '/:subdomain/admin/dashboard' element={<Dashboard/>}/>
+            <Route path = '/:subdomain/admin/add-user' element={<Adduser/>}/>
+            </Routes>
             
-          </Routes>
+            
         {/* </Suspense> */}
       {/* </SocketProvider> */}
     </Router>
@@ -38,3 +53,6 @@ const App = () => {
 }
 
 export default App
+
+
+//#1976d2

@@ -6,24 +6,34 @@ const chatSchema = new Schema({
     ref: 'Institution',
     required: true,
   },
-  creator:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+  creator: {
+    _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ['admin', 'parent','teacher','student'],
+      default: 'student',
+    },
+    fullname: {
+      type: String,
+      default: null,
+    },
   },
-  avatar:{
+  avatar: {
     type: String,
     default: null,
   },
-  addmembersallowed:{
+  addmembersallowed: {
     type: Boolean,
     default: false,
   },
-  sendmessageallowed:{
+  sendmessageallowed: {
     type: Boolean,
     default: false,
   },
-  isAdmin:[
+  isAdmin: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -37,9 +47,19 @@ const chatSchema = new Schema({
   members: [
     {
       _id: {
-        type: mongoose.Schema.Types.ObjectId
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
       },
       publicKey: {
+        type: String,
+        default: null,
+      },
+      role: {
+        type: String,
+        enum:  ['admin', 'parent','teacher','student'],
+        default: 'user',
+      },
+      name: {
         type: String,
         default: null,
       },
@@ -53,5 +73,10 @@ const chatSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  description: {
+    type: String,
+    default: null,
+  },
 });
+
 export const Chat = mongoose.models.Chat || model('Chat', chatSchema);

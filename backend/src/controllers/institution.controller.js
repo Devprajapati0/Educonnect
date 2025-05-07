@@ -316,7 +316,7 @@ const institutionLogin = asynhandler(async (req, res) => {
 
         if (!isMatch) { 
             return res.json(
-                new apiresponse(400, null, "Invalid credentials")
+                new apiresponse(400, null, "Invalid password")
             );
         }
         if(institution.fullname !== fullname){
@@ -465,7 +465,7 @@ const updateProfile = asynhandler(async (req, res) => {
     new apiresponse(200,institute, 'Institute profile updated successfully.')
   );
 });
-
+ 
 
 
 export { uniqueInstitutionSubdomain,checkOutSession,checkoutSuccess,institutionSignup,institutionLogin,instituteLogout,instituteProfile,updateProfile }
