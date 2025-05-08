@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
+import { SocketProvider } from './socket/Socket.jsx'
+import { Loader } from 'lucide-react'
 // import AdminLayout from './pages/admin/AdminLayout.jsx'
 
 // import Order from './Order.jsx'
@@ -21,8 +23,13 @@ const Forgotpassword = lazy(() => import('./pages/common/Forgotpassword.jsx'))
 const App = () => {
   return (
     <Router>
-      {/* <SocketProvider> */}
-        {/* <Suspense fallback={< />}> */}
+      <SocketProvider>
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-screen">
+          <Loader className="animate-spin text-blue-600" size={48} />
+        </div>
+        }>
+  
           <Routes>
             {/* <Route path="/order" element={<Order />} />
             <Route path="/success" element={} />
@@ -46,8 +53,8 @@ const App = () => {
             </Routes>
             
             
-        {/* </Suspense> */}
-      {/* </SocketProvider> */}
+        </Suspense>
+      </SocketProvider>
     </Router>
   )
 }

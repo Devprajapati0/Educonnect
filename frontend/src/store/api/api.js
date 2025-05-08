@@ -73,12 +73,36 @@ const api = createApi({
                 method: 'GET',
             }),
             providesTags: ['user'],
+            //nochache
+            
+        }),
+        getMessages: builder.query({
+            query: (data) => ({
+                url: `/${data.subdomain}/${data.role}/get-all-messages/${data.chatId}?page=${data.page}`,
+                method: 'GET',
+            }),
+            // providesTags: ['user'],
+        }),
+        getChatDetail : builder.query({
+            query: (data) => ({
+                url: `/${data.subdomain}/${data.role}/getchat/${data.chatId}`,
+                method: 'GET',
+            }),
+            // providesTags: ['user'],
+        }),
+        sendAttachments : builder.mutation({
+            query: (data) => ({
+                url: `/${data.subdomain}/${data.role}/send-message`,
+                method: 'POST',
+                body: data,
+            }),
+            // invalidatesTags: ['user'],
         }),
         
     }),
 })
 
 export const {useGetInstituteProfileQuery,useUpdateInstituteProfileMutation,useAddRoleSignupMutation,useUpdateUserPasswordMutation,useGetMyChatsQuery,useGetAllUsersBasedOnRoleQuery,
-    useCreateGroupChatMutation,useGetUserForGroupsQuery
+    useCreateGroupChatMutation,useGetUserForGroupsQuery,useGetMessagesQuery,useGetChatDetailQuery,useSendAttachmentsMutation
 } = api
 export default api;

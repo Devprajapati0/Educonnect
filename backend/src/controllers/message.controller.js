@@ -67,7 +67,7 @@ const sendMessageController = asynhandler(async (req, res) => {
     });
   
     const populatedMessage = await message
-      .populate("sender", "username avatar role")
+      .populate("sender", "name avatar role")
       .populate("replyTo")
       .execPopulate?.() || message;
   
@@ -81,20 +81,21 @@ const getIndividualMessageController = asynhandler(async (req, res) => {
     const chatId = req.params.chatId;
     const { page = 1 } = req.query;
     const user = req.user;
-    console.log("user..",user)
+    // console.log("user..",user)
   
-    const resultPerPage = 10;
+    const resultPerPage = 8;
     const skip = (page - 1) * resultPerPage;
   
     // Step 1: Fetch Chat
     const chat = await Chat.findById(chatId).lean();
+    // console.log("chat", chat)
   
     if (!chat) {
       return res.json(new apiresponse(404, null, "Chat not found"));
     }
   
     // Step 2: Check Institute Context
-    if (chat.institute.toString() !== user.institute.toString()) {
+    if (chat.institution.toString() !== user.institution._id.toString()) {
       return res.json(new apiresponse(403, null, "Access denied"));
     }
   
@@ -113,13 +114,15 @@ const getIndividualMessageController = asynhandler(async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(resultPerPage)
-        .populate("sender", "username avatar role") // Adjust fields as per your user schema
+        .populate("sender", "name avatar role") // Adjust fields as per your user schema
         .lean(),
       Message.countDocuments({ chat: chatId }),
     ]);
   
     const totalPages = Math.ceil(totalMessagesCount / resultPerPage) || 0;
     const hasNextPage = page < totalPages;
+
+    // console.log("messagesnddndndndndndndnndndn", messages);
   
     return res.json(
       new apiresponse(

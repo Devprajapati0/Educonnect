@@ -4,10 +4,12 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { NEW_GROUP_MESSAGE, NEW_MESSAGE,NEW_MESSAGE_ALERT, START_TYPING, STOP_TYPING } from './helpers/events.js';
 import { Message } from './models/message.model.js';
+import jwt from 'jsonwebtoken';
 //socket
 import {Server} from 'socket.io'
 import http from 'http';
-import { socketAuthenticator } from './helpers/socket.js';
+import {User} from './models/user.model.js'
+ import { socketAuthenticator } from './helpers/socket.js';
 
 
 dotenv.config();
@@ -31,17 +33,16 @@ app.use(express.urlencoded({limit:'500mb',extended:true}))
 app.use(cookieParser())
 app.use(express.static("public"))
 
-//socket middleware
-io.use((socket,next) => {
-    cookieParser()(socket.request,socket.request.resume,async(err) => {
-        await socketAuthenticator(err, socket.request, next);
-        next();
-    })
-})
+io.use((socket, next) => {
+    cookieParser()(socket.request, {}, async (err) => {
+      await socketAuthenticator(socket, next);
+    });
+  });
 
 //socket connection
 io.on("connection",(socket) => {
     const user = socket.user;
+    console.log("User connected:", user);
 
     socket.on("JOIN_CHATS",(chatIds) => {
         chatIds.forEach((chatId) => {
@@ -50,10 +51,41 @@ io.on("connection",(socket) => {
     })
 
     socket.on(NEW_GROUP_MESSAGE,async ({messages=[]}) =>{
-        
+        // console.log("messages",messages)
+
+        for (const msg of messages) {
+            const messageForRealTime = {
+              content: msg.encryptedMessage,   // This is already encrypted+signed
+              sender: msg.from,
+              chat: msg.chatId,
+              createdAt: new Date().toISOString(),
+              attachments: msg.attachments || [],
+            };
+            const messageForDB = {
+              sender: msg.from,
+              chat: msg.chatId,
+              content: msg.encryptedMessage,
+              attachments: msg.attachments || [],
+            };
+            try {
+                const savedMessage = await Message.create(messageForDB);
+                console.log("Message saved to DB:", savedMessage);
+              }
+              catch (error) {
+                console.error("Error saving message to DB:", error);
+              }
+
+              io.to(msg.chatId).emit(NEW_MESSAGE, {
+                chatId: msg.chatId,
+                message: messageForRealTime,
+                // attachments: msg.attachments || [],
+              });
+          }
+        // console.log("messages",messages)
     })
 
     socket.on(NEW_MESSAGE,async ({chatId,message="",attachments=[]}) =>{
+        console.log("message",message,chatId,attachments)
         const messageForRealtime = {
             message,
             chatId,

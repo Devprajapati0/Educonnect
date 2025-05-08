@@ -14,22 +14,19 @@ const ChatItem = React.memo(function ChatItem({
   avatar,
   name,
   _id,
-  // groupChat = false,
   isSelected = false,
   role,
   subdomain,
-  // isOnline = false,
-  // newMessageAlert,
-  // handleDeleteChat,
+  newMessageAlert,
+  onClick, // NEW
 }) {
-  // console.log("ChatItem rendered",subdomain);
   const theme = useTheme();
 
   return (
     <Link
       to={`/${subdomain}/${role}/chat/${_id}`}
       style={{ textDecoration: "none" }}
-      // onContextMenu={(e) => handleDeleteChat(e, _id, groupChat)}
+      onClick={onClick} // NEW
     >
       <Box
         sx={{
@@ -48,12 +45,10 @@ const ChatItem = React.memo(function ChatItem({
           },
         }}
       >
-        {/* Avatar with optional online badge */}
         <Badge
           variant="dot"
           color="success"
           overlap="circular"
-          // invisible={!isOnline}
           sx={{
             "& .MuiBadge-badge": {
               width: 10,
@@ -73,7 +68,6 @@ const ChatItem = React.memo(function ChatItem({
           />
         </Badge>
 
-        {/* Chat Info */}
         <Stack spacing={0.2} overflow="hidden">
           <Typography
             fontWeight={600}
@@ -84,27 +78,24 @@ const ChatItem = React.memo(function ChatItem({
             {name}
           </Typography>
 
-          {/* Future use for new message alerts */}
-          {/* {newMessageAlert?.count > 0 && (
+          {newMessageAlert?.count > 0 && (
             <Typography
-              variant="caption"
               sx={{
-                bgcolor: theme.palette.primary.main,
+                fontSize: "12px",
+                bgcolor: "#1976d2",
                 color: "white",
                 px: 1,
                 py: 0.25,
-                borderRadius: "8px",
-                fontWeight: 500,
+                borderRadius: "10px",
                 display: "inline-block",
-                maxWidth: "140px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                width: "fit-content",
+                fontWeight: 500,
               }}
             >
-              {newMessageAlert.count} new message{newMessageAlert.count > 1 ? "s" : ""}
+              {newMessageAlert.count} new message
+              {newMessageAlert.count > 1 ? "s" : ""}
             </Typography>
-          )} */}
+          )}
         </Stack>
       </Box>
     </Link>

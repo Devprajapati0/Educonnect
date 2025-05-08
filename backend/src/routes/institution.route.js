@@ -14,4 +14,5 @@ router.route('/logout-institution').post(instituteAuthenticator,instituteLogout)
 router.route('/profile').get(instituteAuthenticator,instituteProfile);
 router.route('/update-profile').put(instituteAuthenticator,upload.single('logo'),updateProfile);
 
+
 export default router;

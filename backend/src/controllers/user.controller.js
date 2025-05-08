@@ -285,14 +285,13 @@ const updateUserPasssword = asynhandler(async(req,res) => {
 
 const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
   try {
-    console.log("getAllUsersBasedOnRole",req.body)
+    console.log("getAllUsersBasedOnRole", req.user);
+
     if (!req.user) {
       return res.json(new apiresponse(401, null, "Unauthorized Access"));
     }
 
-    const { _id, role } = req.user;
-    // console.log("User ID:", _id);
-    // console.log("User Role:", role);
+    const { _id, role, institution } = req.user;
 
     const data = {
       students: [],
@@ -300,9 +299,11 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
       teachers: [],
     };
 
-    // 1. Get all users except the current user
-    const allUsers = await User.find({ _id: { $ne: _id } }).select("_id name role email avatar");
-    // console.log("All Users:", allUsers);
+    // 1. Get all users from the same institution except current user
+    const allUsers = await User.find({
+      _id: { $ne: _id },
+      "institution._id": institution._id,
+    }).select("_id name role email avatar");
 
     // 2. Get all *non-group* chats where the current user is a member
     const userChats = await Chat.find({
@@ -310,7 +311,7 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
       "members._id": _id,
     }).select("members");
 
-    // 3. Collect all user IDs that this user is already chatting with
+    // 3. Collect user IDs already in chat
     const chattingWithUserIds = new Set();
     userChats.forEach((chat) => {
       chat.members.forEach((member) => {
@@ -320,14 +321,13 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
       });
     });
 
-    // 4. Filter users NOT in chat and based on role logic
+    // 4. Role-based filtering
     allUsers.forEach((user) => {
       const userId = user._id.toString();
-
-      if (chattingWithUserIds.has(userId)) return; // Already in chat
+      if (chattingWithUserIds.has(userId)) return;
 
       if (role === "admin") {
-        data[user.role + "s"]?.push(user);
+        data[user.role + "s"]?.push(user); // students, teachers, parents
       }
 
       if (role === "teacher" && ["student", "parent"].includes(user.role)) {
@@ -342,50 +342,58 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
         data[user.role + "s"]?.push(user);
       }
     });
-    if(!data.students.length && !data.parents.length && !data.teachers.length){
+
+    if (
+      !data.students.length &&
+      !data.parents.length &&
+      !data.teachers.length
+    ) {
       return res.json(new apiresponse(404, data, "No users found"));
     }
 
-    return res.json(new apiresponse(200, data, "Available users to start new chat"));
+    return res.json(
+      new apiresponse(200, data, "Available users to start new chat")
+    );
   } catch (error) {
     console.error(error);
     return res.json(new apiresponse(500, null, "Internal Server Error"));
   }
 });
+
 const getUserForGroups = asynhandler(async (req, res) => {
   try {
     if (!req.user) {
-      return res.status(401).json(new apiresponse(401, null, "Unauthorized Access"));
+      return res.json(new apiresponse(401, null, "Unauthorized Access"));
     }
 
-    const { _id, role } = req.user;
-    // console.log("User ID:", _id);
+    const { _id, role, institution } = req.user;
 
-    let filter = { _id: { $ne: _id } };
+    // Base filter: exclude self and match institution
+    let filter = {
+      _id: { $ne: _id },
+      "institution._id": institution._id
+    };
 
-    if (role === "Admin") {
-    } else if (role === "Teacher") {
-
+    // Role-based filtering logic
+    if (role === "Teacher") {
       filter.role = { $in: ["Student", "Teacher"] };
-    } else if (role === "Student") {
+    } else if (role === "Student" || role === "Parent") {
+      filter.role = "Teacher";
+    }
+    // Admin can see all, so no role filter
 
-      filter.role = "Teacher";
-    } else if (role === "Parent") {
-      filter.role = "Teacher";
-    } 
-    console.log("Filter:", filter);
+    console.log("Group User Filter:", filter);
 
     const users = await User.find(filter).select("_id name role email avatar");
-    console.log("Filtered Users:", users);
 
     if (!users || users.length === 0) {
-      return res.status(404).json(new apiresponse(404, null, "No users found"));
+      return res.json(new apiresponse(404, null, "No users found"));
     }
 
-    return res.status(200).json(new apiresponse(200, users, "Available users to start new chat"));
+    return res.json(new apiresponse(200, users, "Available users to start new group"));
   } catch (error) {
     console.error(error);
-    return res.status(500).json(new apiresponse(500, null, "Internal Server Error"));
+    return res.json(new apiresponse(500, null, "Internal Server Error"));
   }
 });
 export {

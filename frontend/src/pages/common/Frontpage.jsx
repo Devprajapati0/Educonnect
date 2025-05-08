@@ -20,6 +20,8 @@ import axios from "axios"
 import { FRONTEND_URL } from "../../helpers/url"
 import toast from "react-hot-toast"
 import { generateKeyPair } from "../../helpers/key"
+import { useDispatch } from "react-redux"
+import { login } from "../../store/slice/authSlice"
 
 function getSubdomainName() {
   const pathname = window.location.pathname
@@ -38,6 +40,7 @@ export default function Frontpage() {
 
   const navigate = useNavigate()
   const subdomain = getSubdomainName()
+  const dispatch = useDispatch()
   
 
   useEffect(() => {
@@ -69,6 +72,18 @@ export default function Frontpage() {
       )
          
          if(response.data.success){
+        const user = response.data.data
+        // console.log('usersss',user)
+        dispatch(login({
+          user: {
+            _id: user._id,
+            username: user.name,
+            email: user.email,
+            role: user.role,
+            avatar: user.avatar,
+          },
+          isAuthenticated: true,
+        }))
         toast.success(response.data.message || "Login successful")
 
         if(response.data.data.publicKey == null){

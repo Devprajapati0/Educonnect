@@ -15,7 +15,7 @@ import NewChatDialogContent from "./NewChatDialogContent.jsx";// you will create
 import { useCreateGroupChatMutation, useGetAllUsersBasedOnRoleQuery } from "../../store/api/api.js";
 import toast from "react-hot-toast";
 import CircularProgress from "@mui/material/CircularProgress";
-
+import { useParams } from "react-router-dom";
 function getInstitutionAndRoleFromPath() {
   const pathname = window.location.pathname;
   const parts = pathname.split("/").filter(Boolean); // removes empty strings
@@ -26,11 +26,15 @@ function getInstitutionAndRoleFromPath() {
   return { institution, role };
 }
 const ChatList = ({ categorizedChats = {} ,
-  flag,setFlag
+  flag,setFlag,newMessageAlert
 }) => {
+  // console.log("newMessageAlert", newMessageAlert);
+  const { id } = useParams(); 
+  // console.log("chatId", id);
   const categories = ["students", "teachers", "parents", "groups"];
   const [selectedTab, setSelectedTab] = useState("students");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState(null);
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
@@ -147,8 +151,10 @@ const ChatList = ({ categorizedChats = {} ,
 
       <Stack spacing={1}>
         {chats.length > 0 ? (
-          chats.map((chat) =>
-              <ChatItem
+          chats.map((chat) => {
+             const alert = newMessageAlert?.find((item) => item._id === chat._id);
+              
+             return <ChatItem
                 key={`${chat._id}`}
                avatar={chat.avatar}
                 name={chat.name}
@@ -159,17 +165,18 @@ const ChatList = ({ categorizedChats = {} ,
                 //   // Handle chat click
                 //   console.log("Chat clicked:", chat._id);
                 // }}
-                isSelected={false}
+                isSelected={chat._id === id}
+                onClick={() => setSelectedChatId(chat._id)} // NEW
                 subdomain={institution}
                 role={role}
                 // groupChat={chat.groupChat}
                 // isOnline={chat.isOnline}
                 // isOnline={isOnline}
-                // newMessageAlert={newMessageAlert}
+                 newMessageAlert={alert}
                 // handleDeleteChat={handleDeleteChat}
                 // onDelete={() => handleDeleteChat(chat._id)}
                 
-              />
+              />}
           )
         ) : (
           <Typography variant="body2" align="center" color="text.secondary">
