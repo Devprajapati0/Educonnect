@@ -29,6 +29,10 @@ const messageSchema = new Schema(
         type: String,
         trim: true,
       },
+      receiver: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
       attachments: [AttachmentSchema],
     },
     { timestamps: true }

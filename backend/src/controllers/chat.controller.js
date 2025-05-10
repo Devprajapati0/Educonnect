@@ -1,23 +1,21 @@
 import { asynhandler } from "../utils/asynchandler.js"
 import { apiresponse } from "../utils/apiResponse.js"
 import { Institution } from "../models/institution.model.js"
-import bcrypt from "bcryptjs"
-import { User } from "../models/user.model.js"
-import { uploadOnCloudinary } from "../helpers/cloudinary.js"
 import { createGroupSchema } from "../schemas/chat.schema.js"
 import { Chat } from "../models/chat.model.js"
+import { uploadOnCloudinary } from "../helpers/cloudinary.js"
 
 
 const createGroupChat = asynhandler(async (req, res) => {
   try {
-    console.log(req.user)
+    // console.log("vhgvb ",req.user)
     if (!req.user) {
       return res.json(
         new apiresponse(401, null, "Unauthorized Access")
       )
     }
     const {_id,role} = req.user
-    // console.log('req.body', req.body)
+     console.log('req.body', req.body)
     const pareseData = createGroupSchema.safeParse(req.body)
     if (!pareseData.success) {
         const errorMessage = pareseData.error.errors[0].message
@@ -29,7 +27,7 @@ const createGroupChat = asynhandler(async (req, res) => {
     const { name, description, members, addmembersallowed,subdomain, sendmessageallowed ,groupchat} = pareseData.data
     
    
-    // console.log("userExisted", userExisted)
+    //  console.log("userExisted", userExisted)
 
     
     const institution = await Institution.findOne({ subdomain })
@@ -38,10 +36,23 @@ const createGroupChat = asynhandler(async (req, res) => {
         new apiresponse(400, null, "Institution not found")
       )
     }
-    // console.log("institution", institution)
+    //  console.log("institution", institution)
+    let image=null;
+    if(req.file){
+      const url = await uploadOnCloudinary(req.file.path);
+      console.log("url", url)
+      if (!url) {
+        return res.json(
+          new apiresponse(400, null, "Error uploading image")
+        )
+      }
+      image = url.url;
+    }
+    console.log("req.file", req.file)
+    console.log("image", image)
 
-    const allmembers=[...members, {_id,role,name:req.user.name}]
-    // console.log("allmembers", allmembers)
+    const allmembers=[...members, {_id,role,name:req.user.name,avatar:req.user.avatar}]
+      console.log("allmembers", allmembers)
     
     const chatData = {
      institution: institution._id,
@@ -50,7 +61,7 @@ const createGroupChat = asynhandler(async (req, res) => {
          role,
          fullname: req.user.name,
      },
-     avatar: pareseData.data.avatar,
+     avatar: image || null,
      addmembersallowed,
         sendmessageallowed,
         iaAdmin:_id,
@@ -61,7 +72,7 @@ const createGroupChat = asynhandler(async (req, res) => {
         isAdmin:(groupchat == true)? _id:null,
     }
     const chat = await Chat.create(chatData);
-    // console.log("chat", chat)
+     console.log("chat", chat)
     if (!chat) {
         return res.json(
             new apiresponse(400, null, "Chat not created")
@@ -101,6 +112,7 @@ const getMyChats = asynhandler(async (req, res) => {
       parents: [],
       teachers: [],
       groups: [],
+      admins:[],
     };
 
     // Fetch only chats where this user is a member
@@ -134,30 +146,29 @@ const getMyChats = asynhandler(async (req, res) => {
           data.groups.push(chat);
         }
       } else {
-        // console.log("chat", chat);
         chat.members.forEach((member) => {
-          // Skip self, we're interested in the "other" participant(s)
-          // console.log("member", member,chat)
           if (member._id.toString() === _id.toString()) return;
-
-          // Admin sees all users
+      
+          const customChat = {
+            ...chat.toObject(), // convert Mongoose doc to plain object
+            name: member.name, // override name with the other member
+            avatar: member.avatar, // override avatar
+          };
+      
           if (role === "admin") {
-            data[member.role + "s"].push(chat);
+            data[member.role + "s"].push(customChat);
           }
-
-          // Parent sees chats with teachers or other parents
+      
           if (role === "parent" && ["teacher", "parent"].includes(member.role)) {
-            data[member.role + "s"].push(chat);
+            data[member.role + "s"].push(customChat);
           }
-
-          // Teacher sees all chats with anyone
+      
           if (role === "teacher" && ["teacher", "student", "parent", "admin"].includes(member.role)) {
-            data[member.role + "s"].push(chat);
+            data[member.role + "s"].push(customChat);
           }
-
-          // Student sees chats with students and teachers only
+      
           if (role === "student" && ["teacher", "student"].includes(member.role)) {
-            data[member.role + "s"].push(chat);
+            data[member.role + "s"].push(customChat);
           }
         });
       }

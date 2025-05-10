@@ -14,7 +14,7 @@ import {
   FormControl,
   Paper
 } from "@mui/material"
-import { Visibility, VisibilityOff, School } from "@mui/icons-material"
+import { Visibility, VisibilityOff, School, Token } from "@mui/icons-material"
 import { useNavigate, Link } from "react-router-dom"
 import axios from "axios"
 import { FRONTEND_URL } from "../../helpers/url"
@@ -72,8 +72,9 @@ export default function Frontpage() {
       )
          
          if(response.data.success){
-        const user = response.data.data
-        // console.log('usersss',user)
+          // console.log('response',response)
+        const user = response.data.data.user
+        //  console.log('usersss',user)
         dispatch(login({
           user: {
             _id: user._id,
@@ -81,12 +82,13 @@ export default function Frontpage() {
             email: user.email,
             role: user.role,
             avatar: user.avatar,
+            token:response.data.data.token
           },
           isAuthenticated: true,
         }))
         toast.success(response.data.message || "Login successful")
 
-        if(response.data.data.publicKey == null){
+        if(response.data.data.user.publicKey == null){
           console.log('public key required')
 
           const publicKey = await generateKeyPair();
@@ -94,7 +96,7 @@ export default function Frontpage() {
 
           const responseother = await axios.post(
             `${FRONTEND_URL}${subdomain}/${role}/updatePublicKey`,
-            { userId: response.data.data._id, publicKey },
+            { userId: response.data.data.user._id, publicKey },
             {
               headers: {
                 "Content-Type": "application/json",

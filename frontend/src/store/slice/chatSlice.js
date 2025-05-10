@@ -3,7 +3,12 @@ import { createSlice } from "@reduxjs/toolkit";
 // Initial state for the auth slice
 const initialState = {
     notificationCount : 0,
-    newMessageAlert :[]
+    newMessageAlert :[],
+    avatar:{
+      image: null,
+      chatId:"",
+      name:""
+    }
 };
 export const chatSlice = createSlice({
   name: "use",
@@ -18,6 +23,9 @@ export const chatSlice = createSlice({
     },
     resetNotification: (state) => {
       state.notificationCount = 0;
+    },
+    setAvatar: (state, action) => {
+      state.avatar = action.payload;
     },
     setNewMessageAlert: (state, action) => {
       if (!Array.isArray(state.newMessageAlert)) {
@@ -40,6 +48,6 @@ export const chatSlice = createSlice({
 
   },
 });
-export const {removeNewMessageAlert,incrementNotification,decrementNotification,resetNotification,setNewMessageAlert} = chatSlice.actions;
+export const {removeNewMessageAlert,incrementNotification,decrementNotification,resetNotification,setNewMessageAlert,setAvatar} = chatSlice.actions;
 
 export default chatSlice.reducer;

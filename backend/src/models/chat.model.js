@@ -63,6 +63,10 @@ const chatSchema = new Schema({
         type: String,
         default: null,
       },
+      avatar: {
+        type: String,
+        default: null,
+      },  
     },
   ],
   groupchat: {

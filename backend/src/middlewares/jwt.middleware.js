@@ -11,6 +11,9 @@ const userAuthenticator = asynhandler(async(req,res,next) => {
         const userToken = await req.cookies.userToken || req.headers['Authorization']?.replace('Bearer ','');
         // console.log("accessToken",accessToken)
         // console.log("1111111111111111111111111111111111111n b bha sbhxhsgchdbhjxbhxbhdchbhbbchbdxhdhjjhdxbbhdcbhjhahbhscbd chbhcdhbc jdbchjbdjch dhcbijdcjhbdhjchdcbdjcbdcindjd jcdjcjdcbjdc")
+        // console.log("🚀 REQ URL:", req.url);
+        // console.log("🚀 REQ PARAMS:", req.params);
+        // console.log("🚀 REQ PATH:", req.path);
          console.log("userToken",userToken)
         if(!userToken) {
             return res.json(

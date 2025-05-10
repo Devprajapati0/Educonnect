@@ -121,6 +121,16 @@ const userSignup = asynhandler(async (req, res) => {
   
   
       // Create new user
+      let image = null;
+      if(avatar){
+        const uploadResult = await uploadOnCloudinary(avatar);
+        if (!uploadResult) {
+          return res.status(400).json(new apiresponse(400, null, "Error uploading image"))
+        }
+        image = uploadResult.url;
+        
+        
+      }
       console.log("instituteData", instituteData)
       const userData = new User({
         name,
@@ -128,7 +138,7 @@ const userSignup = asynhandler(async (req, res) => {
         password: hashedPassword,
         rollnumber,
         role,
-        avatar:avatar,
+        avatar:image,
         batch: role === "student" ? batch : undefined,
         department: role === "teacher" ? department : undefined,
         parentofemail: role === "parent" ? parentofemail : undefined,
@@ -200,7 +210,7 @@ const loginUser = asynhandler(async (req, res) => {
     };
 
     return res.cookie("userToken", token, options).json(
-      new apiresponse(200, user, "Login successful")
+      new apiresponse(200, {user,token}, "Login successful")
     );
   } catch (error) {
     console.error(error);
@@ -297,6 +307,7 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
       students: [],
       parents: [],
       teachers: [],
+      admins:[]
     };
 
     // 1. Get all users from the same institution except current user
@@ -346,7 +357,8 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
     if (
       !data.students.length &&
       !data.parents.length &&
-      !data.teachers.length
+      !data.teachers.length &&
+      !data.admins.length
     ) {
       return res.json(new apiresponse(404, data, "No users found"));
     }

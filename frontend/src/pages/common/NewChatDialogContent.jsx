@@ -15,6 +15,7 @@ import {
 import GroupIcon from "@mui/icons-material/Group";
 import SearchIcon from "@mui/icons-material/Search";
 import NewGroupDialog from "./ NewGroupDialog"; // Adjust the import path as necessary
+import { Key } from "lucide-react";
 
 export default function NewChatDialogContent({ data, onStartChat }) {
   const [search, setSearch] = useState("");
@@ -24,6 +25,7 @@ export default function NewChatDialogContent({ data, onStartChat }) {
     { key: "students", label: "Students" },
     { key: "teachers", label: "Teachers" },
     { key: "parents", label: "Parents" },
+    {key: "admins", label: "Admins" },
   ];
 
   const filterUsers = (users = []) => {
@@ -104,6 +106,7 @@ export default function NewChatDialogContent({ data, onStartChat }) {
 
               <List dense disablePadding>
                 {users.map((user) => (
+                  console.log("user88888", user),
                   <ListItem
                     key={user._id}
                     button

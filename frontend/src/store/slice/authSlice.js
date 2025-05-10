@@ -8,6 +8,7 @@ const initialState = {
     role:"",
     email:"",
     avatar:"",
+    token:"",
   },
   isAuthenticated: false,
   isFileOpen:false,
@@ -19,12 +20,10 @@ export const authSlice = createSlice({
   reducers: {
    login: (state, action) => {
       state.user = action.payload.user;
-      state.token = action.payload.token;
       state.isAuthenticated = true;
     },
     logout: (state) => {
       state.user = null;
-      state.token = null;
       state.isAuthenticated = false;
     },
     setFileOpen: (state, action) => {

@@ -5,14 +5,22 @@ import instituteReducer from "./slice/instituteSlice";
 import chatReducer from "./slice/chatSlice";
 import authReducer from "./slice/authSlice";
 import api from "./api/api";
-const persistConfig = {
+const persistConfigInstitute = {
   key: "institute",
   storage,
 };
+const persistConfigChat = {
+  key: "chat",
+  storage,
+};
+const persistConfigAuth = {
+  key: "auth",
+  storage,
+};
 
-const persistedInstituteReducer = persistReducer(persistConfig, instituteReducer);
-const persistedChatReducer = persistReducer(persistConfig, chatReducer);
- const persistedAuthReducer = persistReducer(persistConfig, authReducer);
+const persistedInstituteReducer = persistReducer(persistConfigInstitute, instituteReducer);
+const persistedChatReducer = persistReducer(persistConfigChat, chatReducer);
+ const persistedAuthReducer = persistReducer(persistConfigAuth, authReducer);
 // import api from "./api/api";
  const store = configureStore({
   reducer: {

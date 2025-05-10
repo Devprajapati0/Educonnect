@@ -1,48 +1,70 @@
-// socketContext.js
-import { createContext, useContext, useMemo, useEffect } from 'react';
-import io from 'socket.io-client';
-
-function getInstitutionAndRoleFromPath() {
-  const pathname = window.location.pathname
-  const parts = pathname.split("/").filter(Boolean)
-
-  const institution = parts[0] || "EduConnect"
-  const role = parts[1] || "guest"
-
-  return { institution, role }
-}
+import { createContext, useContext, useEffect, useState } from "react";
+import io from "socket.io-client";
+import { v4 as uuidv4 } from "uuid";
+import { useSelector } from "react-redux";
 
 const SocketContext = createContext(null);
+export const useSocket = () => useContext(SocketContext);
 
-const SocketProvider = ({ children }) => {
-  const socket = useMemo(() => {
-    const { institution, role } = getInstitutionAndRoleFromPath()
-    const socketInstance = io('http://localhost:3000', {
-      withCredentials: true,
-      query: {
-        subdomain: institution,
-        role: role,
-      },
-    });
+function getInstitutionAndRoleFromPath() {
+  const pathname = window.location.pathname;
+  const parts = pathname.split("/").filter(Boolean);
 
-    return socketInstance;
-  }, []);
+  const institution = parts[0] || "EduConnect";
+  const role = parts[1] || "guest";
+
+  return { institution, role };
+}
+
+export const SocketProvider = ({ children }) => {
+  const currentUser = useSelector((state) => state.auth.user);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!currentUser?.token) {
+      console.log("Socket NOT initialized: No token");
+      return;
+    }
 
-    socket.on('connect', () => {
-      console.log('Socket Connected:', socket.id);
+    const { institution, role } = getInstitutionAndRoleFromPath();
+
+    // Initiate socket connection
+    const newSocket = io("http://localhost:3000", {
+      withCredentials: true,
+      auth: {
+        token: currentUser.token,
+      },
+      query: {
+        subdomain: institution,
+        role,
+        clientId: uuidv4(),
+      },
+      transports: ["polling"], // Allow websocket and polling transport
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket Disconnected');
+    newSocket.on("connect", () => {
+      console.log("✅ Socket connected", newSocket.id);
     });
+    newSocket.on("disconnect", (reason) => {
+      console.log("🔌 Socket disconnected:", reason);
+    });
+
+    newSocket.on("connect_error", (err) => {
+      console.error("❌ Socket connection error:", err.message);
+    });
+
+    newSocket.on("error", (err) => {
+      console.error("❌ Socket error:", err);
+    });
+
+    setSocket(newSocket);
 
     return () => {
-      socket.disconnect();
+      newSocket.disconnect();
+      console.log("🔌 Socket disconnected");
+      setSocket(null);
     };
-  }, [socket]);
+  }, [currentUser?.token]);
 
   return (
     <SocketContext.Provider value={socket}>
@@ -50,9 +72,3 @@ const SocketProvider = ({ children }) => {
     </SocketContext.Provider>
   );
 };
-
-const useSocket = () => {
-  return useContext(SocketContext);
-};
-
-export { SocketProvider, useSocket };

@@ -20,7 +20,9 @@ router.route('/get-my-chats').get(userAuthenticator,getMyChats);
 router.route('/getchat/:chatId').get(userAuthenticator,getChatDetails)
 
 //message
-router.route('/send-message').post(userAuthenticator,upload.array('attachments'),sendMessageController);
+// router.route('/send-message').post(userAuthenticator,
+//     upload.array('attachments', 10)
+//     ,sendMessageController);
 router.route('/get-all-messages/:chatId').get(userAuthenticator,getIndividualMessageController);
 
 export default router;

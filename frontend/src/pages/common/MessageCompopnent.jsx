@@ -12,7 +12,7 @@ const AvatarCard = ({ avatar }) => (
 );
 
 const MessageComponent = ({ message }) => {
-    // console.log("message", message)
+    //  console.log("message", message)
   const { user } = useSelector((state) => state.auth);
 
   if (!message) return null;

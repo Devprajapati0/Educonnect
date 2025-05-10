@@ -18,6 +18,8 @@ import { Close, Search } from "@mui/icons-material";
 import GroupDetailsStep from "./GroupDetailsStep";
 import { useCreateGroupChatMutation, useGetUserForGroupsQuery } from "../../store/api/api";
 import toast from "react-hot-toast";
+import { setAvatar } from "../../store/slice/chatSlice.js";
+import { useDispatch } from "react-redux";
 
 function getInstitutionAndRoleFromPath() {
   const pathname = window.location.pathname;
@@ -63,15 +65,21 @@ export default function NewGroupDialog({ open, onClose }) {
     );
   };
   const [createGroupChat] = useCreateGroupChatMutation();
-
+  const dispatch = useDispatch()
   const handleNext = () => setNextStep(true);
   const handleBack = () => setNextStep(false);
   const handleCreate = (groupData) => {
     // console.log("Group data:", groupData);
+     dispatch(setAvatar({
+          image:groupData.groupImage,
+          chatId:"",
+          name:groupData.groupName
+        }))
     const members = groupData.selectedUsers.map((user) => ({
       _id: user._id,
       role: user.role,
       name: user.name,
+      avatar: user.avatar,
     }));
     // const image = groupData.groupImage || null;
     const data={

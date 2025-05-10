@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState ,useMemo} from "react"
-import { Box, Grid, CircularProgress, Stack, IconButton, Menu, MenuItem, Dialog, DialogTitle,Button, DialogContent, TextField, DialogActions } from "@mui/material"
+import React, { useCallback, useEffect, useRef, useState ,useMemo, Fragment} from "react"
+import { Box, Grid, CircularProgress, Stack,Avatar,Typography, IconButton, Menu, MenuItem, Dialog, DialogTitle,Button, DialogContent, TextField, DialogActions } from "@mui/material"
 import { useGetChatDetailQuery, useGetMessagesQuery, useGetMyChatsQuery, useSendAttachmentsMutation } from "../../store/api/api.js"
 import toast from "react-hot-toast"
 import { ChatList } from "../common/ChatList.jsx"
@@ -13,8 +13,9 @@ import { incrementNotification, removeNewMessageAlert, setNewMessageAlert } from
 import { useSocketEvents } from "../../helpers/hooks.js"
 import MessageCompopnent from "../common/MessageCompopnent.jsx"
 import { AttachFile } from "@mui/icons-material"
-import { SendIcon } from "lucide-react"
+import { Loader, SendIcon } from "lucide-react"
 import {styled} from "@mui/material"
+import { GroupIcon } from "lucide-react"
 
 export const InputBox = styled('input')`
 width: 100%;
@@ -37,20 +38,40 @@ function getInstitutionAndRoleFromPath() {
 }
 const Chat = (socket) => {
  socket = socket.socket;
+//  console.log("socket", socket)
   const { id } = useParams()
+  const avatars = useSelector((state) => state.chat.avatar)
+  //  console.log("avatars", avatars)
+  // const avatarArray = useSelector((state) => state.chat.avatar || []);
+  // console.log("avatarArray", avatarArray)
+
+  // const avatarObj = avatarArray.reduce((acc, item) => {
+  //   if (item.chatId) {
+  //     acc[item.chatId] = {
+  //       image: item.image,
+  //       alt: item.alt,
+  //       name: item.name,
+  //     };
+  //   }
+  //   return acc;
+  // }, {});
+  // console.log("avatarObj", avatarObj)
+  // console.log("id", id)
   const dispatch = useDispatch()
   const currentUser = useSelector((state) => state.auth.user)
-  //  console.log(currentUser)
+ 
+  // console.log(currentUser)
   const { institution,role } = getInstitutionAndRoleFromPath()
-  const {data:chatData} = useGetChatDetailQuery({
+  // console.log("institution", institution)
+  const {data:chatData,isLoading:chatfetchLoading} = useGetChatDetailQuery({
     subdomain: institution,
     role: role,
-    chatId: id,})
-    const [sendAttachment] = useSendAttachmentsMutation({
-      subdomain: institution,
-      role: role,
-    })
-  // console.log("chatDetailData", chatData)
+    chatId: id,}
+  )
+    const [sendAttachment,
+    {isLoading:sendAttachmentLoading}
+    ] = useSendAttachmentsMutation()
+    // console.log("chatDetailData", chatData)
   const isChatSelected = typeof id !== "undefined"
   
   const containerRef = useRef(null);
@@ -59,6 +80,7 @@ const Chat = (socket) => {
   const audioRef = useRef();
   const docRef = useRef();
   const typingTimeoutRef = useRef(null);
+  const bottomRef = useRef(null);
 
   const [messages, setMessages] = useState([]);
   const [page, setPage] = useState(1);
@@ -72,7 +94,7 @@ const Chat = (socket) => {
   const [typingUser, setTypingUser] = useState(null);
  
   
-  const {data:oldMessageChunk ,isLoading:oldMessageLoading,isError,error} = useGetMessagesQuery({
+  const {data:oldMessageChunk ,isLoading:oldMessageLoading} = useGetMessagesQuery({
     subdomain: institution,
     role: currentUser.role,
     chatId: id,
@@ -81,8 +103,15 @@ const Chat = (socket) => {
     // skip: !id || !currentUser,
     // refetchOnMountOrArgChange: true,
   })
+
+
+
+  // console.log("page", page)
   
-  const {data:oldMessages , setData:setOldMessages,refetch} = useInfiniteScrollTop(
+  const {data:oldMessages ,
+    isLoading:oldMessagesLoading,
+    // isError:oldMessagesError,
+     setData:setOldMessages,refetch} = useInfiniteScrollTop(
     containerRef,
     oldMessageChunk?.data?.totalPages,
     page,
@@ -111,14 +140,20 @@ const Chat = (socket) => {
       }
     },[dispatch, id])
   
-
+    useEffect(() => {
+      if (bottomRef.current)
+        bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
   const newMessageAlertHandler = useCallback((data) => {
+    console.log("newMessageAlertHandler", data)
+    if (!data) return;
     if(data.chatId == id) return;
     dispatch(setNewMessageAlert({ chatId: data.chatId }))
   },[dispatch,id])
   
   const startTypingHandler = useCallback((data) => {
+    // console.log("startTypingHandler", data)
     if (data.chatId === id && data.senderId !== currentUser?._id) {
       setUserIsTyping(true);
       setTypingUser({ name: data.sendername, id: data.senderId });
@@ -126,8 +161,7 @@ const Chat = (socket) => {
       typingTimeoutRef.current = setTimeout(() => {
         setUserIsTyping(false);
         setTypingUser(null);
-      }, 3000);
-
+      }, 6000);
     }
   }, [id, currentUser._id])
 
@@ -144,18 +178,17 @@ const Chat = (socket) => {
   }, [id, currentUser?._id])
   const newMessageHandler = useCallback(
     async (data) => {
-      console.log("newMessageHandler", data);
-      // early out
       if (!data) return;
       if (data.chatId !== id) return;
-
-      try {
-        setMessages((prevMessages) => [...prevMessages, data.message]);
-      } catch (error) {
-        toast.error("🔐 Decryption/Verification failed:", error);
-      }
+  
+      const isReceiver = data.message.receiver === currentUser._id;
+      const isSender = data.message.sender._id === currentUser._id;
+  
+      if (!isReceiver && !isSender) return;
+      if(isReceiver){
+      setMessages((prevMessages) => [...prevMessages, data.message]);}
     },
-    [id]
+    [id, currentUser._id]
   );
 
   const alertHandler = useCallback((data) => {
@@ -202,7 +235,7 @@ const Chat = (socket) => {
     containerRef.current.scrollTop = containerRef.current.scrollHeight;
   }, [messages, oldMessages]);
 
-  // if(isLoading){
+  // if(oldMessageLoading){
   //   return (
   //     <Box
   //       sx={{
@@ -222,24 +255,33 @@ const Chat = (socket) => {
   //   return null
   // }
 
-  console.log("oldmessafechunk",oldMessageChunk)
+  //  console.log("oldmessafechunk",oldMessageChunk)
+
+  if(oldMessageChunk?.success == false){
+    toast.error(oldMessageChunk.message)
+    return null
+  }
   
-  const allMessages = [...oldMessages, messages]
-  console.log("allMessages",allMessages)
+  
+  const allMessages = [...oldMessages, ...messages]
+  // console.log("allMessages",allMessages)
 
   const sendMessageHandler = async(event) => {
     event.preventDefault()
+    // console.log("sendMessageHandler",message)
+    if(!message) return;
 
     const memebers = chatData?.data?.members;
-    const filteredMembers = memebers.filter((member) => member._id !== currentUser._id);
+    // console.log("memebers", memebers)
+    // const filteredMembers = memebers.filter((member) => member._id !== currentUser._id);
     // console.log("filteredMembers", filteredMembers)
     const encryptedMessage = [];
-    for(const memeber of filteredMembers){
+    for(const memeber of memebers){
       encryptedMessage.push({
         to: memeber._id,
         from: {
           _id: currentUser._id,
-          name: currentUser.name,
+          name: currentUser.username,
           avatar: currentUser.avatar,
           role: currentUser.role,
         },
@@ -251,7 +293,7 @@ const Chat = (socket) => {
 
     if(!message) return;
 
-    console.log("encryptedMessage", encryptedMessage)
+    //  console.log("encryptedMessage", encryptedMessage)
     socket.emit('NEW_GROUP_MESSAGE',{
       messages:encryptedMessage,
   })
@@ -261,20 +303,37 @@ const Chat = (socket) => {
   const messageOnChangle = (e) => {
     const newMessage = e.target.value;
     setMessage(newMessage);
-
+  
     if (socket && newMessage.trim() !== "") {
       if (!iamTyping) {
-        socket.emit('START_TYPING', { chatId: id, senderId: currentUser?._id,sendername:currentUser?.name });
+        socket.emit('START_TYPING', {
+          chatId: id,
+          senderId: currentUser?._id,
+          sendername: currentUser?.username
+        });
         setIamTyping(true);
       }
   
-      // Clear existing timeout and set a new one
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
-        socket.emit('STOP_TYPING', { chatId: id, senderId: currentUser?._id,sendername:currentUser?.name });
-
+        socket.emit('STOP_TYPING', {
+          chatId: id,
+          senderId: currentUser?._id,
+          sendername: currentUser?.username // use correct key
+        });
         setIamTyping(false);
-      }, 3000);
+      }, 2000); // shorter delay = faster stop
+    } else {
+      // Handle the case when the input is cleared
+      if (iamTyping) {
+        socket.emit('STOP_TYPING', {
+          chatId: id,
+          senderId: currentUser?._id,
+          sendername: currentUser?.username
+        });
+        setIamTyping(false);
+        clearTimeout(typingTimeoutRef.current);
+      }
     }
   }
 
@@ -290,62 +349,107 @@ const Chat = (socket) => {
   }
  
   const sendFileMessage = async () => {
-    const formData = new FormData();
-    formData.append("attachments", filePreview.file);
-    formData.append("content", fileMessage);
-    formData.append("chatId", id);
+    // const formData = new FormData();
+    // console.log("filePreview",filePreview)
+    // const data ={
+    //   chatId: id,
+    //   content: fileMessage,
+    //   attachments:[
+    //     {
+    //       url: filePreview.url,
+    //       fileType: filePreview.type,
+    //     },
+    //   ]
+    // }
 
-    const res = await sendAttachment(formData);
+ 
+
+    // const res = await sendAttachment({
+    //   subdomain: institution,
+    //   role: role,
+    //   data,
+    // });
+    // console.log("res",res)
+    const memebers = chatData?.data?.members;
+    // console.log("memebers", memebers)
+    for(const memeber of memebers){
+      const formData = new FormData();
+     formData.append("attachments", filePreview.file);
+    formData.append("content", fileMessage||"");
+    formData.append("chatId", id)
+    formData.append("receiver", memeber._id)
+
+
+   
+    
+    const res = await sendAttachment({formData,subdomain:institution,role})
+   
+
+    const data = res.data.data;
+
     socket.emit('NEW_MESSAGE', {
       chatId: id,
-      message: fileMessage,
+      message: {
+        content:data.content,
+        sender: {
+          _id: currentUser._id,
+          name: currentUser.username,
+          avatar: currentUser.avatar,
+          role: currentUser.role,
+        },
+        chat: id,
+        createdAt: new Date().toISOString(),
+        receiver: data.receiver,
+      },
       attachments: res?.data?.data?.attachments,
+      
     });
     setFilePreview(null);
     setFileMessage("");
     setFileModalOpen(false);
     setMessage("");
   }
+  }
 
 
   return (
-    <Box
-    sx={{
-      height: "100%",
-      width: "100%",
-      p: isChatSelected ? 2 : 0,
-      display: "flex",
-      justifyContent: isChatSelected ? "flex-start" : "center", // ✅ Fix here
-      alignItems: "center",
-      backgroundColor: "#f5f7fa",
-    }}
-  >
+   <>
+  {isChatSelected && (
+    <Box display="flex" alignItems="center" padding={1} bgcolor="#111827">
+    {
+      !chatfetchLoading ? (
+        <React.Fragment>
+          <Avatar
+            src={avatars.image|| ""}
+            alt={""}
+            sx={{ width: 35, height: 35, mr: 2 }}
+          />
+          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+            {avatars.name ||"unidentified"}
+          </Typography>
+        </React.Fragment>
+      ) : <Loader />
+    }
+  </Box>
+  )}
+    <Fragment>
       {isChatSelected ? (
-       <Box
+      <>
+      {oldMessagesLoading?
+      <div>Loading...</div>
+       :<Stack
+       ref={containerRef}
+       boxSizing={"border-box"}
+       padding={"1rem"}
+       spacing={"1rem"}
+       bgcolor={"#f5f5f5"}
+       height={"90%"}
        sx={{
-         backgroundColor: "#fff",
-         padding: 3,
-         borderRadius: 2,
-         boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-         width: "100%",
-         // REMOVE or comment this ↓
-         // maxWidth: "700px",
+         overflowX: "hidden",
+         overflowY: "auto",
        }}
      >
-      <Stack
-        ref={containerRef}
-        sx={{
-          overflowX: "hidden",
-          overflowY: "auto",
-          boxSizing: "border-box",
-          padding: "1rem",
-          height: "90%",
-          bgcolor: "grey.100",
-          borderRadius: "10px",
-        }}
-        spacing={1}
-      >
-        {oldMessageLoading? (
+        {oldMessagesLoading || oldMessageLoading? (
           <div>Loading...</div>
         ) : (
           allMessages.length === 0 ? (
@@ -357,7 +461,7 @@ const Chat = (socket) => {
           ))
         )
         )}
-      </Stack>
+      </Stack>}
 
       <form onSubmit={sendMessageHandler}  style={{ height: "10%" }}>
         <Stack direction="row" padding="1rem" alignItems="center" spacing={1}>
@@ -395,12 +499,11 @@ const Chat = (socket) => {
           <input type="file" hidden accept="video/*" ref={videoRef} onChange={handleFileChange} />
           <input type="file" hidden ref={docRef} onChange={handleFileChange} />
 
-         {userIsTyping && (
-           <div>
-
-             {typingUser?.name} is typing...
-           </div>
-         )}
+          {userIsTyping && typingUser && (
+  <Typography variant="body2" sx={{ color: "gray", ml: 2, mb: 1 }}>
+    {typingUser.name} is typing...
+  </Typography>
+)}
                   <InputBox
                     onChange={messageOnChangle}
                     value={message}
@@ -449,11 +552,15 @@ const Chat = (socket) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setFileModalOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={sendFileMessage}>Send</Button>
+          <Button variant="contained" disabled={sendAttachmentLoading} onClick={sendFileMessage}>
+            {sendAttachmentLoading ? 
+  <Loader className="animate-spin text-blue-600" size={48} />: "Send"}
+          </Button>
         </DialogActions>
       </Dialog>
 
-     </Box>
+      </>
+
       ) : (
         <Box sx={{ textAlign: "center", px: 2 }}>
           <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem", color: "#333" }}>
@@ -464,66 +571,76 @@ const Chat = (socket) => {
           </p>
         </Box>
       )}
-    </Box>
+    </Fragment>
+
+   </>
   )
 }
 
 const Adminchat = () => {
   const socket = useSocket()
-  // console.log("socket", socket)
+  //  console.log("socket", socket)
   const AlertData = useSelector((state) => state.chat)
   const { institution, role } = getInstitutionAndRoleFromPath()
   const [flag, setFlag] = useState(false)
+  const categories = ["students", "teachers", "parents", "groups","admins"];
 
   const { data, isLoading, isError, refetch } = useGetMyChatsQuery({
     subdomain: institution,
     role: role,
   })
-   console.log("data", data)
-
+  //  console.log("data", data)
+  const isBoolRef = useRef(true);
   useEffect(() => {
     if (!socket) return
+    let chatIds = [];
     if (socket && data?.data) {
-      const { groups = [], students = [], teachers = [], parents = [] } = data.data;
+      const { groups = [], students = [], teachers = [], parents = [], admins = [] } = data.data;
     
-      const allChats = [...groups, ...students, ...teachers, ...parents];
-      const chatIds = allChats.map(chat => chat._id).filter(Boolean); // ensure _id exists
+      const allChats = [...groups, ...students, ...teachers, ...parents, ...admins];
+      chatIds = allChats.map(chat => chat._id).filter(Boolean); // ensure _id exists
     
       socket.emit("JOIN_CHATS", chatIds);
+      isBoolRef.current = chatIds.length > 0;
     }
     if (flag) {
-      refetch()
-      setFlag(false)
+      refetch();
+      setFlag(false);
     }
-  }, [flag, socket, data])
+  }, [flag, socket, data, refetch]);
+
+  // const dates = useSelector((state) => state.chat.avatar);
+  // console.log("dates", dates)
 
   const chats = data?.data || []
 
-  if (isLoading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          backgroundColor: "#f0f2f5",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    )
-  }
+  
 
-  if (isError) {
-    toast.error("Something went wrong")
-    return null
-  }
+  // if (isLoading) {
+  //   return (
+  //     <Box
+  //       sx={{
+  //         display: "flex",
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         height: "100vh",
+  //         backgroundColor: "#f0f2f5",
+  //       }}
+  //     >
+  //       <CircularProgress />
+  //     </Box>
+  //   )
+  // }
+
+  // if (isError) {
+  //   toast.error("Something went wrong")
+  //   return null
+  // }
 
   return (
    <Box className="h-screen w-screen flex" >
   <Grid container sx={{ height: "100%" }}>
-    {/* LEFT NAVBAR */}
+
     <Grid item sx={{ width: 80, backgroundColor: "#0e1c2f" }}>
       <Leftbar />
     </Grid>
@@ -541,12 +658,28 @@ const Adminchat = () => {
               overflowY: "auto",
             }}
           >
-      <ChatList
-        categorizedChats={chats}
-        flag={flag}
-        setFlag={setFlag}
-        newMessageAlert={AlertData.newMessageAlert}
-      />
+          {
+            isLoading ? (
+              <div style={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <CircularProgress />
+              </div>
+            ) : isError ? (
+              <div style={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <p>Error loading chats</p>
+              </div>
+            ) : (
+              <div style={{ height: "100%", overflowY: "auto" }}>
+                <ChatList
+                  categorizedChats={chats}
+                  flag={flag}
+                  setFlag={setFlag}
+                  newMessageAlert={AlertData.newMessageAlert}
+                  categories={categories}
+                />
+              </div>
+            )
+          }
+      
     </Grid>
 
     {/* CHAT AREA */}
@@ -563,7 +696,7 @@ const Adminchat = () => {
               overflow: "hidden",
             }}
           >
-      <Chat 
+      <Chat isChatSelected={isBoolRef.current}
         socket={socket}
        />
     </Grid>

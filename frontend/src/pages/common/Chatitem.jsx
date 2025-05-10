@@ -9,6 +9,9 @@ import {
   useTheme,
   Avatar,
 } from "@mui/material";
+import { useDispatch } from "react-redux";
+import { setAvatar } from "../../store/slice/chatSlice.js";
+
 
 const ChatItem = React.memo(function ChatItem({
   avatar,
@@ -20,13 +23,22 @@ const ChatItem = React.memo(function ChatItem({
   newMessageAlert,
   onClick, // NEW
 }) {
+  console.log("alert",newMessageAlert)
   const theme = useTheme();
-
+   const dispatch = useDispatch();
+    const handleClick = () => {
+      dispatch(setAvatar({
+        image:avatar,
+        chatId:_id,
+        name:name
+      }))
+    }
+  // const typer = useSelector((state) => state.chat.startTyping)
   return (
     <Link
       to={`/${subdomain}/${role}/chat/${_id}`}
       style={{ textDecoration: "none" }}
-      onClick={onClick} // NEW
+      onClick={handleClick} // NEW
     >
       <Box
         sx={{
@@ -97,6 +109,7 @@ const ChatItem = React.memo(function ChatItem({
             </Typography>
           )}
         </Stack>
+        
       </Box>
     </Link>
   );
