@@ -62,7 +62,7 @@ export const Leftbar = () => {
       </Tooltip>
 
       <Tooltip title="Settings" placement="right">
-        <IconButton sx={{ color: "white" }}>
+        <IconButton onClick={() => navigate(`/${subdomain}/admin/update-profile`)} sx={{ color: "white" }}>
           <SettingsIcon />
         </IconButton>
       </Tooltip>

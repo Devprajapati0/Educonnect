@@ -22,15 +22,20 @@ const ChatItem = React.memo(function ChatItem({
   subdomain,
   newMessageAlert,
   onClick, // NEW
+  isOnline,
+  groupchat
 }) {
-  console.log("alert",newMessageAlert)
+  // console.log("isOnline",isOnline)
+  // console.log("alert",newMessageAlert)
   const theme = useTheme();
    const dispatch = useDispatch();
     const handleClick = () => {
       dispatch(setAvatar({
         image:avatar,
         chatId:_id,
-        name:name
+        name:name,
+        _id,
+        isGroup:groupchat,
       }))
     }
   // const typer = useSelector((state) => state.chat.startTyping)
@@ -57,28 +62,39 @@ const ChatItem = React.memo(function ChatItem({
           },
         }}
       >
-        <Badge
-          variant="dot"
-          color="success"
-          overlap="circular"
-          sx={{
-            "& .MuiBadge-badge": {
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              border: "2px solid white",
-              backgroundColor: "#44b700",
-              top: 4,
-              right: 4,
-            },
-          }}
-        >
-          <Avatar
-            src={avatar || "/default-avatar.png"}
-            alt={name}
-            sx={{ width: 48, height: 48 }}
-          />
-        </Badge>
+          {isOnline ? (
+  <Badge
+    overlap="circular"
+    anchorOrigin={{
+      vertical: "bottom",
+      horizontal: "right",
+    }}
+    variant="dot"
+    aria-label={`${name} is online`}
+    sx={{
+      "& .MuiBadge-dot": {
+        backgroundColor: "#44b700",
+        width: "15px",
+        height: "15px",
+        borderRadius: "50%",
+        border: "2px solid white",
+      },
+    }}
+  >
+    <Avatar
+      src={avatar || "/default-avatar.png"}
+      alt={name}
+      sx={{ width: 48, height: 48 }}
+    />
+  </Badge>
+) : (
+  <Avatar
+    src={avatar || "/default-avatar.png"}
+    alt={name}
+    sx={{ width: 48, height: 48 }}
+  />
+)}
+      
 
         <Stack spacing={0.2} overflow="hidden">
           <Typography

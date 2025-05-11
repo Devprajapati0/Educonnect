@@ -1,5 +1,6 @@
 import {createApi ,fetchBaseQuery} from '@reduxjs/toolkit/query/react';
 import { FRONTEND_URL } from '../../helpers/url';
+// import { updateUserProfile } from '../../../../backend/src/controllers/user.controller';
 // import { createGroupChat } from '../../../../backend/src/controllers/chat.controller';
 
 const api = createApi({
@@ -109,10 +110,55 @@ const api = createApi({
             body: formData, 
           }),
         }),
+
+        getUserProfile: builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-user-profile`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        updateUserProfile: builder.mutation({
+          query: (
+           { data,
+            subdomain,
+            role,}
+          ) => ({
+            url: `/${subdomain}/${role}/update-user-profile`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        upDateChatDetail: builder.mutation({
+          query: ({data,subdomain,role}) => ({
+            url: `/${subdomain}/${role}/update-chat`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        getChatMedia: builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-chat-media`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        exitGroup: builder.mutation({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/exit-group`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
       })
 })
 
 export const {useGetInstituteProfileQuery,useUpdateInstituteProfileMutation,useAddRoleSignupMutation,useUpdateUserPasswordMutation,useGetMyChatsQuery,useGetAllUsersBasedOnRoleQuery,
-    useCreateGroupChatMutation,useGetUserForGroupsQuery,useGetMessagesQuery,useGetChatDetailQuery,useSendAttachmentsMutation
+    useCreateGroupChatMutation,useGetUserForGroupsQuery,useGetMessagesQuery,useGetChatDetailQuery,useSendAttachmentsMutation,useGetUserProfileQuery,useUpdateUserProfileMutation,useUpDateChatDetailMutation
+,useGetChatMediaQuery,useExitGroupMutation
 } = api
 export default api;

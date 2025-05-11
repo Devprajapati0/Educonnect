@@ -55,11 +55,14 @@ io.use(async(socket, next) => {
   });
 
 //socket connection
+const onlineUsers = new Map();
 io.on("connection", (socket) => {
     const user = socket.user;
     socket.on("connect", () => {
         console.log("✅ Socket connected", socket.id);
       });
+      onlineUsers.set(user._id, socket.id);
+      socket.broadcast.emit("USER_ONLINE", { userId: user._id });
   
     console.log("User connected:", user._id);
   
@@ -149,9 +152,15 @@ io.on("connection", (socket) => {
         sendername,
       });
     });
+
+    socket.on("GET_ONLINE_USERS", () => {
+      socket.emit("ONLINE_USERS", Array.from(onlineUsers.keys()));
+    });
   
     socket.on("disconnect", (reason) => {
         console.log("Socket disconnected:", user._id, "Reason:", reason);
+        onlineUsers.delete(user._id);
+        socket.broadcast.emit("USER_OFFLINE", { userId: user._id });
       });
   
     socket.on("error", (error) => {

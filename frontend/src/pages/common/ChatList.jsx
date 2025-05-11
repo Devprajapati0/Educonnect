@@ -19,6 +19,7 @@ import {
 } from "../../store/api/api.js";
 import toast from "react-hot-toast";
 import { useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function getInstitutionAndRoleFromPath() {
   const pathname = window.location.pathname;
@@ -34,20 +35,24 @@ const ChatList = ({
   setFlag,
   newMessageAlert,
   categories,
+  onlineUsers = [],
+  refetch
 }) => {
   const { id } = useParams();
+  const currentUser = useSelector((state) => state.auth.user)
   const [selectedTab, setSelectedTab] = useState("students");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
   };
+  // const onlineUserSet = new Set(onlineUsers);
 
   const chats = categorizedChats[selectedTab] || [];
   const { institution, role } = getInstitutionAndRoleFromPath();
   const [createGroupChat] = useCreateGroupChatMutation();
 
-  const handleStartChat = (user) => {
+  const handleStartChat = async(user) => {
     const avatar = user.avatar || null;
     const chatData = {
       name: user.name,
@@ -84,6 +89,7 @@ const ChatList = ({
       });
 
     setDialogOpen(false);
+    await refetch();
   };
 
   const { data, isLoading, isError } = useGetAllUsersBasedOnRoleQuery({
@@ -107,8 +113,11 @@ const ChatList = ({
   }
 
   if (isError) {
-    toast.error("Something went wrong");
-    return null;
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <Typography color="error">Failed to load users. Please try again.</Typography>
+      </Box>
+    );
   }
 
   return (
@@ -194,10 +203,20 @@ const ChatList = ({
           <Stack spacing={1}>
             {chats.length > 0 ? (
               chats.map((chat) => {
+                console.log("Chat", chat);
                 const alert = newMessageAlert?.find(
                   (item) => item.chatId === chat._id
                 );
+                const otherMembers = chat?.members?.filter(
+                  (member) => member?._id !== currentUser?._id
+                ) || [];
+                
+                // Check if any of them are online
+                const isOnline = otherMembers.some((member) =>
+                  onlineUsers.includes(member._id)
+                );
 
+              //  const isOnline = otherMembers.some((member) => onlineUserSet.has(member._id));
                 return (
                   <ChatItem
                     key={chat._id}
@@ -209,11 +228,16 @@ const ChatList = ({
                     subdomain={institution}
                     role={role}
                     newMessageAlert={alert}
+                    isOnline={isOnline}
+                    groupchat={chat.groupchat}
+            
                   />
                 );
               })
             ) : (
-              <Typography>No chats available</Typography>
+              <Typography variant="body2" align="center" color="text.secondary">
+  No chats found for {selectedTab}. Start a new conversation!
+</Typography>
             )}
           </Stack>
         </Box>
@@ -242,6 +266,7 @@ const ChatList = ({
             data={data?.data || []}
             onStartChat={handleStartChat}
             onClose={() => setDialogOpen(false)}
+            refetch={refetch}
           />
         </Dialog>
       </Box>

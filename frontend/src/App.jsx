@@ -19,6 +19,7 @@ const Adminchat = lazy(() => import('./pages/admin/Adminchat.jsx'))
 const Dashboard = lazy(() => import('./pages/admin/Dashboard.jsx'))
 const Adduser = lazy(() => import('./pages/admin/Adduser.jsx'))
 const Forgotpassword = lazy(() => import('./pages/common/Forgotpassword.jsx'))
+const ProfileUser = lazy(() => import('./pages/common/ProfileUser.jsx'))
 // const Adminchat = lazy(() => import('./pages/admin/Adminchat.jsx'))
 const App = () => {
   return (
@@ -46,10 +47,11 @@ const App = () => {
 
             <Route path = '/:subdomain/login' element={<Frontpage/>}/>
             <Route path = '/:subdomain/forgot-password' element={<Forgotpassword/>}/>
-            <Route path = '/:subdomain/admin/chat' element={<Adminchat/>}/>
-            <Route path = '/:subdomain/admin/chat/:id' element={<Adminchat/>}/>
             <Route path = '/:subdomain/admin/dashboard' element={<Dashboard/>}/>
             <Route path = '/:subdomain/admin/add-user' element={<Adduser/>}/>
+            <Route path=  '/:subdomain/:role/update-profile' element={<ProfileUser/>} />
+            <Route path = '/:subdomain/:role/chat' element={<Adminchat/>}/>
+            <Route path = '/:subdomain/:role/chat/:id' element={<Adminchat/>}/>
             </Routes>
             
             

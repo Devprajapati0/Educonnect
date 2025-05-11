@@ -408,11 +408,99 @@ const getUserForGroups = asynhandler(async (req, res) => {
     return res.json(new apiresponse(500, null, "Internal Server Error"));
   }
 });
+
+const getUserProfile = asynhandler(async (req, res) => {
+  try {
+    if(!req.user){
+      return res.json(new apiresponse(401, null, "login to your account"));
+    }
+    const { _id,role ,institution} = req.user;
+
+    const data = await User.findById(
+      _id,
+    ).select("-password");
+
+    if (!data) {
+      return res.json(new apiresponse(404, null, "User not found"));
+    }
+    if (data?.role !== role) {
+      return res.json(new apiresponse(403, null, "Forbidden"));
+    }
+    if (data?.institution?._id.toString() !== institution?._id.toString()) {
+      return res.json(new apiresponse(403, null, "Forbidden"));
+    }
+    return res.json(new apiresponse(200, data, "User profile fetched successfully"));
+
+
+  } catch (error) {
+    console.error(error);
+    return res.json(new apiresponse(500, null, "Failed to fetch profile"));
+  }
+})
+
+const updateUserProfile = asynhandler(async(req,res) => {
+  console.log("HIT: updateUserProfile controller");
+  if(!req.user){
+    return res.json(new apiresponse(401, null, "login to your account"));
+  }
+ try {
+   const { _id,role ,institution} = req.user;
+   console.log("updateUserProfile",req.body)
+   const {name,avatar} = req.body;
+   const data = await User.findById(
+     _id,
+   ).select("-password");
+ 
+   if (!data) {
+     return res.json(new apiresponse(404, null, "User not found"));
+   }
+   if (data?.role !== role) {
+     return res.json(new apiresponse(403, null, "Forbidden"));
+   }
+   if (data?.institution?._id.toString() !== institution?._id.toString()) {
+     return res.json(new apiresponse(403, null, "Forbidden"));
+   }
+ 
+   if(avatar){
+     const url = await uploadOnCloudinary(avatar);
+     if (!url) {
+       return res.json(new apiresponse(400, null, "Error uploading image"))
+     }
+     data.avatar = url.url;
+   }
+   if(name){
+     data.name = name;
+   }
+   await data.save();
+   await Chat.updateMany(
+    { "members._id": _id },
+    {
+      $set: {
+        "members.$[elem].name": data.name,
+        "members.$[elem].avatar": data.avatar,
+      },
+    },
+    {
+      arrayFilters: [{ "elem._id": _id }],
+    }
+  );
+
+   return res.json(new apiresponse(200, data, "User profile updated successfully"));
+ } catch (error) {
+   console.error(error);
+   return res.json(new apiresponse(500, null, "Failed to update profile"));
+ }
+
+
+})
+
 export {
     userSignup,
     loginUser,
     updatePublicKey,
     updateUserPasssword,
     getAllUsersBasedOnRole,
-    getUserForGroups
+    getUserForGroups,
+    getUserProfile,
+    updateUserProfile
 }

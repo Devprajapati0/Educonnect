@@ -17,7 +17,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import NewGroupDialog from "./ NewGroupDialog"; // Adjust the import path as necessary
 import { Key } from "lucide-react";
 
-export default function NewChatDialogContent({ data, onStartChat }) {
+export default function NewChatDialogContent({ data, onStartChat,refetch }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -86,7 +86,7 @@ export default function NewChatDialogContent({ data, onStartChat }) {
         New Group
       </Button>
 
-      <NewGroupDialog open={open} onClose={() => setOpen(false)} />
+      <NewGroupDialog refetch={refetch} open={open} onClose={() => setOpen(false)} />
 
       {/* User List */}
       <Box className="max-h-[300px] overflow-y-auto pr-1">

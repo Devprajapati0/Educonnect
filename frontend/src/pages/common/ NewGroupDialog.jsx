@@ -31,7 +31,7 @@ function getInstitutionAndRoleFromPath() {
   return { institution, role };
 }
 
-export default function NewGroupDialog({ open, onClose }) {
+export default function NewGroupDialog({refetch, open, onClose }) {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [nextStep, setNextStep] = useState(false);
   const [groupName, setGroupName] = useState("");
@@ -68,7 +68,7 @@ export default function NewGroupDialog({ open, onClose }) {
   const dispatch = useDispatch()
   const handleNext = () => setNextStep(true);
   const handleBack = () => setNextStep(false);
-  const handleCreate = (groupData) => {
+  const handleCreate = async(groupData) => {
     // console.log("Group data:", groupData);
      dispatch(setAvatar({
           image:groupData.groupImage,
@@ -112,6 +112,7 @@ export default function NewGroupDialog({ open, onClose }) {
     setSelectedUsers([]);
     setNextStep(false);
     onClose();
+    await refetch();
   };
 
   if (isLoading) return <CircularProgress />;

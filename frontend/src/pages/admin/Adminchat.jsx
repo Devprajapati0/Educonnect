@@ -16,6 +16,7 @@ import { AttachFile } from "@mui/icons-material"
 import { Loader, SendIcon } from "lucide-react"
 import {styled} from "@mui/material"
 import { GroupIcon } from "lucide-react"
+import ChatInfoDialog from "../common/ChatInfoDialog.jsx"
 
 export const InputBox = styled('input')`
 width: 100%;
@@ -36,10 +37,12 @@ function getInstitutionAndRoleFromPath() {
 
   return { institution, role }
 }
-const Chat = (socket) => {
- socket = socket.socket;
-//  console.log("socket", socket)
+const Chat = (
+  { socket, refetch }
+) => {
+  // console.log("socket", socket)
   const { id } = useParams()
+  
   const avatars = useSelector((state) => state.chat.avatar)
   //  console.log("avatars", avatars)
   // const avatarArray = useSelector((state) => state.chat.avatar || []);
@@ -66,8 +69,20 @@ const Chat = (socket) => {
   const {data:chatData,isLoading:chatfetchLoading} = useGetChatDetailQuery({
     subdomain: institution,
     role: role,
-    chatId: id,}
+    chatId: id,},{
+    skip: !id || !currentUser,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    }
   )
+  // console.log("chatData", chatData)
+  // console.log("currentUser", currentUser)
+  const isAdmin = chatData?.data?.isAdmin?.includes(currentUser?._id) || false;
+  // console.log("isAdmin", isAdmin)
+const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin;
+// console.log("isInputDisabled", isInputDisabled)
+
     const [sendAttachment,
     {isLoading:sendAttachmentLoading}
     ] = useSendAttachmentsMutation()
@@ -80,9 +95,11 @@ const Chat = (socket) => {
   const audioRef = useRef();
   const docRef = useRef();
   const typingTimeoutRef = useRef(null);
-  const bottomRef = useRef(null);
+  // const bottomRef = useRef(null);
 
   const [messages, setMessages] = useState([]);
+  const [openInfoDialog, setOpenInfoDialog] = useState(false);
+  const [openInfo, setOpenInfo] = useState(false);
   const [page, setPage] = useState(1);
   const [filePreview, setFilePreview] = useState(null);
   const [fileModalOpen, setFileModalOpen] = useState(false);
@@ -92,9 +109,10 @@ const Chat = (socket) => {
   const [iamTyping, setIamTyping] = useState(false);
   const [userIsTyping, setUserIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
- 
+
   
-  const {data:oldMessageChunk ,isLoading:oldMessageLoading} = useGetMessagesQuery({
+  
+  const {data:oldMessageChunk ,isLoading:oldMessageLoading,refetch:chatsrefetch} = useGetMessagesQuery({
     subdomain: institution,
     role: currentUser.role,
     chatId: id,
@@ -103,6 +121,15 @@ const Chat = (socket) => {
     // skip: !id || !currentUser,
     // refetchOnMountOrArgChange: true,
   })
+  useEffect(() => {
+    const refetch = async () => {
+      if (id) {
+        await chatsrefetch();
+      }
+    };
+    refetch();
+  }, [id, chatsrefetch]);
+
 
 
 
@@ -111,7 +138,7 @@ const Chat = (socket) => {
   const {data:oldMessages ,
     isLoading:oldMessagesLoading,
     // isError:oldMessagesError,
-     setData:setOldMessages,refetch} = useInfiniteScrollTop(
+     setData:setOldMessages,refetch:refetchOldMessages} = useInfiniteScrollTop(
     containerRef,
     oldMessageChunk?.data?.totalPages,
     page,
@@ -140,10 +167,10 @@ const Chat = (socket) => {
       }
     },[dispatch, id])
   
-    useEffect(() => {
-      if (bottomRef.current)
-        bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    // useEffect(() => {
+    //   if (bottomRef.current)
+    //     bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    // }, [messages]);
 
   const newMessageAlertHandler = useCallback((data) => {
     console.log("newMessageAlertHandler", data)
@@ -173,7 +200,7 @@ const Chat = (socket) => {
       typingTimeoutRef.current = setTimeout(() => {
         setUserIsTyping(false);
         setTypingUser(null);
-      }, 3000);
+      }, 4000);
     }
   }, [id, currentUser?._id])
   const newMessageHandler = useCallback(
@@ -255,15 +282,15 @@ const Chat = (socket) => {
   //   return null
   // }
 
-  //  console.log("oldmessafechunk",oldMessageChunk)
+    // console.log("oldmessafechunk",oldMessageChunk)
 
-  if(oldMessageChunk?.success == false){
-    toast.error(oldMessageChunk.message)
-    return null
-  }
+  // if(oldMessageChunk?.success == false){
+  //   toast.error(oldMessageChunk.message)
+  //   return null
+  // }
   
   
-  const allMessages = [...oldMessages, ...messages]
+  const allMessages = useMemo(() => [...oldMessages, ...messages], [oldMessages, messages]);
   // console.log("allMessages",allMessages)
 
   const sendMessageHandler = async(event) => {
@@ -411,27 +438,45 @@ const Chat = (socket) => {
   }
   }
 
+  // if(!isAdmin && isInputDisabled){
+  //   toast.error("Only Admins can send")
+  //   return null
+  // }
+
 
   return (
    <>
-  {isChatSelected && (
-    <Box display="flex" alignItems="center" padding={1} bgcolor="#111827">
-    {
-      !chatfetchLoading ? (
-        <React.Fragment>
-          <Avatar
-            src={avatars.image|| ""}
-            alt={""}
-            sx={{ width: 35, height: 35, mr: 2 }}
-          />
-          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
-            {avatars.name ||"unidentified"}
-          </Typography>
-        </React.Fragment>
-      ) : <Loader />
-    }
+ {isChatSelected && (
+  <Box
+    display="flex"
+    alignItems="center"
+    padding={1}
+    bgcolor="#111827"
+    onClick={() => setOpenInfo(true)} // ✅
+    sx={{ cursor: "pointer" }}
+  >
+    {!chatfetchLoading ? (
+      <>
+        <Avatar src={avatars.image || ""} sx={{ width: 35, height: 35, mr: 2 }} />
+        <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+          {avatars.name || "unidentified"}
+        </Typography>
+      </>
+    ) : (
+      <Loader />
+    )}
   </Box>
-  )}
+)}
+
+<ChatInfoDialog
+  open={openInfo}
+  onClose={() => setOpenInfo(false)}
+  isGroup={avatars.isGroup}
+  avatar={avatars.image}
+  name={avatars.name}
+  _id={id}
+  refetch={refetch}
+/>
     <Fragment>
       {isChatSelected ? (
       <>
@@ -456,9 +501,13 @@ const Chat = (socket) => {
             <div>No messages yet</div>
           ) : (
             // console.log("allMessages", allMessages)
-          allMessages.map((message) => (
-            <MessageCompopnent key={message._id} message={message} />
-          ))
+            <>
+            {allMessages.map((message) => (
+              <MessageCompopnent key={message._id} message={message} />
+            ))}
+            {/* <div ref={bottomRef} style={{ height: "1px" }}></div> */}
+          </>
+          
         )
         )}
       </Stack>}
@@ -504,12 +553,14 @@ const Chat = (socket) => {
     {typingUser.name} is typing...
   </Typography>
 )}
+
                   <InputBox
-                    onChange={messageOnChangle}
-                    value={message}
-                    placeholder="Type a message"
-                    sx={{ flexGrow: 1 }}
-                  />
+  onChange={messageOnChangle}
+  value={message}
+  placeholder={(isInputDisabled)?"Only Admins can Send":"Type a message"}
+  sx={{ flexGrow: 1 }}
+  disabled={isInputDisabled}
+/>
         
           {/* Send Button */}
           <Box ml="auto">
@@ -579,7 +630,9 @@ const Chat = (socket) => {
 
 const Adminchat = () => {
   const socket = useSocket()
-  //  console.log("socket", socket)
+  const [onlineUsers, setOnlineUsers] = useState([])
+  // console.log("onlineUsers", onlineUsers)
+    // console.log("sdddocket", socket)
   const AlertData = useSelector((state) => state.chat)
   const { institution, role } = getInstitutionAndRoleFromPath()
   const [flag, setFlag] = useState(false)
@@ -592,22 +645,36 @@ const Adminchat = () => {
   //  console.log("data", data)
   const isBoolRef = useRef(true);
   useEffect(() => {
-    if (!socket) return
-    let chatIds = [];
-    if (socket && data?.data) {
-      const { groups = [], students = [], teachers = [], parents = [], admins = [] } = data.data;
-    
-      const allChats = [...groups, ...students, ...teachers, ...parents, ...admins];
-      chatIds = allChats.map(chat => chat._id).filter(Boolean); // ensure _id exists
-    
-      socket.emit("JOIN_CHATS", chatIds);
-      isBoolRef.current = chatIds.length > 0;
-    }
+    if (!socket) return;
+  
+    // Handle online users
+    const handleOnlineUsers = (userIds) => {
+      setOnlineUsers(userIds);
+    };
+  
+    // Request current online users
+    socket.emit("GET_ONLINE_USERS", { subdomain: institution });
+    socket.on("ONLINE_USERS", handleOnlineUsers);
+  
+    // Join all chats
+    const { groups = [], students = [], teachers = [], parents = [], admins = [] } = data?.data || {};
+    const allChats = [...groups, ...students, ...teachers, ...parents, ...admins];
+    const chatIds = allChats.map(chat => chat._id).filter(Boolean);
+  
+    socket.emit("JOIN_CHATS", chatIds);
+    isBoolRef.current = chatIds.length > 0;
+  
+    // Refetch if flag is true
     if (flag) {
       refetch();
       setFlag(false);
     }
-  }, [flag, socket, data, refetch]);
+  
+    // Cleanup
+    return () => {
+      // socket.off("ONLINE_USERS", handleOnlineUsers);
+    };
+  }, [flag, socket, data, refetch, institution]);
 
   // const dates = useSelector((state) => state.chat.avatar);
   // console.log("dates", dates)
@@ -675,6 +742,8 @@ const Adminchat = () => {
                   setFlag={setFlag}
                   newMessageAlert={AlertData.newMessageAlert}
                   categories={categories}
+                  onlineUsers={onlineUsers}
+                  refetch={refetch}
                 />
               </div>
             )
@@ -696,8 +765,8 @@ const Adminchat = () => {
               overflow: "hidden",
             }}
           >
-      <Chat isChatSelected={isBoolRef.current}
-        socket={socket}
+      <Chat 
+        socket={socket} refetch={refetch}
        />
     </Grid>
   </Grid>

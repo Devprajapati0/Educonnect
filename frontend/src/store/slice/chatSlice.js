@@ -7,7 +7,9 @@ const initialState = {
     avatar:{
       image: null,
       chatId:"",
-      name:""
+      name:"",
+      _id:"",
+      isGroup:false,
     }
 };
 export const chatSlice = createSlice({

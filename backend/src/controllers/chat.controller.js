@@ -1,7 +1,7 @@
 import { asynhandler } from "../utils/asynchandler.js"
 import { apiresponse } from "../utils/apiResponse.js"
 import { Institution } from "../models/institution.model.js"
-import { createGroupSchema } from "../schemas/chat.schema.js"
+import { createGroupSchema, updatechatSchema } from "../schemas/chat.schema.js"
 import { Chat } from "../models/chat.model.js"
 import { uploadOnCloudinary } from "../helpers/cloudinary.js"
 
@@ -200,5 +200,140 @@ const getChatDetails = asynhandler(async(req,res) => {
   }
 })
 
+const updateChatDetail = asynhandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Unauthorized Access"));
+    }
 
-export { createGroupChat,getMyChats,getChatDetails }
+    console.log("req.body", req.body);
+
+    const parsedData = updatechatSchema.safeParse(req.body);
+    if (!parsedData.success) {
+      const errorMessage = parsedData.error.errors[0].message;
+      console.error("Error parsing data:", errorMessage);
+      return res.json(new apiresponse(400, null, "Invalid request data", errorMessage));
+    }
+    const {
+      chatId,
+      name,
+      description,
+      avatar,
+      members,
+      addmembersallowed,
+      sendmessageallowed,
+      isAdmin
+    } = parsedData.data;
+
+    const { _id } = req.user;
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.json(new apiresponse(404, null, "Chat not found"));
+    }
+
+    const institution = await Institution.findById(chat.institution._id);
+    if (!institution) {
+      return res.json(new apiresponse(404, null, "Institution not found"));
+    }
+
+    const isMember = chat.members.some((member) => member._id.toString() === _id.toString());
+    if (!isMember) {
+      return res.json(new apiresponse(403, null, "You are not a member of this chat"));
+    }
+
+    // Only update fields if provided
+    if (name) chat.name = name;
+    if (description) chat.description = description;
+    if (typeof addmembersallowed === "boolean") chat.addmembersallowed = addmembersallowed;
+    if (typeof sendmessageallowed === "boolean") chat.sendmessageallowed = sendmessageallowed;
+    if (Array.isArray(members)) {
+      chat.members = members;
+    }
+
+    // Handle avatar upload
+    if (avatar) {
+      const uploaded = await uploadOnCloudinary(avatar);
+      if (!uploaded?.url) {
+        return res.json(new apiresponse(400, null, "Error uploading image"));
+      }
+      chat.avatar = uploaded.url;
+    }
+
+    if (Array.isArray(isAdmin)) {
+      isAdmin.forEach((id) => {
+        if (!chat.isAdmin.includes(id)) {
+          chat.isAdmin.push(id);
+        }
+      });
+    }
+
+    await chat.save();
+
+    return res.json(new apiresponse(200, chat, "Chat updated successfully"));
+  } catch (error) {
+    console.error(error);
+    return res.json(new apiresponse(500, null, "Internal Server Error"));
+  }
+});
+const exitGroup = asynhandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Unauthorized Access"));
+    }
+
+    const { chatId } = req.body;
+    if (!chatId) {
+      return res.json(new apiresponse(400, null, "Chat ID is required"));
+    }
+    const { _id } = req.user;
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.json(new apiresponse(404, null, "Chat not found"));
+    }
+    // console.log("dsdsdsds",chat, req.user)
+    if(chat.institution._id.toString() !== req.user.institution._id.toString()){
+      return res.json(new apiresponse(403, null, "You are not a member of this chat"));
+    }
+
+    const userIndex = chat.members.findIndex(
+      (member) => member._id.toString() === _id.toString()
+    );
+
+    if (userIndex === -1) {
+      return res.json(new apiresponse(403, null, "You are not a member of this chat"));
+    }
+
+    const isAdmin = chat.isAdmin.some((adminId) => adminId.toString() === _id.toString());
+
+    if (isAdmin) {
+      const totalAdmins = chat.isAdmin.length;
+
+      if (totalAdmins === 1) {
+        return res.json(
+          new apiresponse(
+            403,
+            null,
+            "You are the only admin. Please assign another admin before exiting the group."
+          )
+        );
+      }
+
+      // Remove from admins
+      chat.isAdmin = chat.isAdmin.filter((adminId) => adminId.toString() !== _id.toString());
+    }
+
+    // Remove from members
+    chat.members = chat.members.filter((member) => member._id.toString() !== _id.toString());
+
+    await chat.save();
+
+    return res.json(new apiresponse(200, null, "Exited group successfully"));
+  } catch (error) {
+    console.error(error);
+    return res.json(new apiresponse(500, null, "Internal Server Error"));
+  }
+});
+
+export { createGroupChat,getMyChats,getChatDetails,updateChatDetail,exitGroup }

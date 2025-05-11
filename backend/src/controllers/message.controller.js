@@ -61,7 +61,8 @@ const sendMessageController = asynhandler(async (req, res) => {
         req.files.map(async (file) => {
           // console.log("File", file);
           const uploadResult = await uploadOnCloudinary(file.path);
-          console.log("skmsks,sls",uploadResult) // return { public_id, url }
+          console.log("skmsks,sls",uploadResult)
+           // return { public_id, url }
           return {
             url: uploadResult.url,
             fileType: (uploadResult.resource_type),
@@ -182,7 +183,57 @@ const getIndividualMessageController = asynhandler(async (req, res) => {
   );
 });
 
+const getChatMediaController = asynhandler(async (req, res) => {
+  const {chatId} = req.body
+  const user = req.user;
+
+  if (!chatId || chatId === 'undefined') {
+    return res.json(new apiresponse(400, null, "Chat ID is required"));
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(chatId)) {
+    return res.json(new apiresponse(400, null, "Invalid Chat ID format"));
+  }
+
+  if (!user) {
+    return res.json(new apiresponse(401, null, "Unauthorized"));
+  }
+
+  // Step 1: Fetch Chat
+  const chat = await Chat.findById(chatId).lean();
+  if (!chat) {
+    return res.json(new apiresponse(404, null, "Chat not found"));
+  }
+
+  // Step 2: Institute Check
+  if (chat.institution._id?.toString() !== user.institution?._id?.toString()) {
+    return res.json(new apiresponse(403, null, "Access denied"));
+  }
+
+  // Step 3: Membership Check
+  const isMember = chat.members.some(
+    (member) => member._id.toString() === user._id.toString()
+  );
+
+  if (!isMember) {
+    return res.json(new apiresponse(403, null, "You are not a member of this chat"));
+  }
+
+  // Step 4: Fetch messages with media attachments
+  const mediaMessages = await Message.find({
+    chat: chatId,
+    receiver: user._id,
+    attachments: { $exists: true, $ne: [] }  // non-empty attachments
+  })
+    .sort({ createdAt: -1 })
+    .populate("sender", "name avatar role")
+    .lean();
+
+  return res.json(new apiresponse(200, mediaMessages, "Media messages fetched successfully"));
+});
+
 export {
     sendMessageController,
-    getIndividualMessageController
+    getIndividualMessageController,
+    getChatMediaController
 }
