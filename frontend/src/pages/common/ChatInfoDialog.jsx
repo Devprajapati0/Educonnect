@@ -29,7 +29,7 @@ import {
 } from "@mui/material";
 
 import CloseIcon from "@mui/icons-material/Close";
-import { useExitGroupMutation, useGetChatDetailQuery, useGetChatMediaQuery, useGetUserForGroupsQuery, useUpDateChatDetailMutation } from "../../store/api/api";
+import { useDeleteChatMutation, useExitGroupMutation, useGetChatDetailQuery, useGetChatMediaQuery, useGetUserForGroupsQuery, useUpDateChatDetailMutation } from "../../store/api/api";
 import { useDispatch, useSelector } from "react-redux";
 // import axios from "axios";
 import toast from "react-hot-toast";
@@ -227,6 +227,7 @@ const ChatInfoDialog = ({ open, onClose, isGroup, avatar, name, _id,refetch:list
     subdomain: institution,
     role,
   });
+  const [deleteChat,{ isLoading: isLoadingDeleteChat }] = useDeleteChatMutation()
   const [updateGroup] = useUpDateChatDetailMutation();
 
   const [exitGroup, { isLoading: isLoadingExitGroup }] = useExitGroupMutation();
@@ -288,28 +289,28 @@ const handleUpdateMembers = async (updatedMembers) => {
 const currentUser = useSelector((state) => state.auth.user)
 const members = chatDetail?.data?.members || [];
 //  console.log("members", members)
-const filteredMembers = members.filter(m => m._id !== currentUser._id);
+// const filteredMembers = members.filter(m => m._id !== currentUser._id);
 const creator = chatDetail?.data?.creator || {};
 const isAdmin = chatDetail?.data?.isAdmin?.includes(currentUser._id);
-const [addMembersAllowed, setAddMembersAllowed] = useState(true);
-const [sendMessageAllowed, setSendMessageAllowed] = useState(true);
+const [addMembersAllowed, setAddMembersAllowed] = useState(chatDetail?.data?.addmembersallowed || false);
+const [sendMessageAllowed, setSendMessageAllowed] = useState(chatDetail?.data?.sendmessageallowed || false);
 const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 const [selectedAdmins, setSelectedAdmins] = useState([]);
 const [activeTab, setActiveTab] = useState(0);
 
 const {
-    data: mediaMessagesData,
-    refetch: refetchMediaMessages,
-    isLoading: isLoadingMediaMessages,
-  } = useGetChatMediaQuery({
-    chatId: _id,
-    subdomain: institution,
-    role,
-  }, {
-    skip: tab !== 1 || !_id, // Don't auto-fetch unless needed
-  });
-  
-  useEffect(() => {
+  data: mediaMessagesData,
+  refetch: refetchMediaMessages,
+  isLoading: isLoadingMediaMessages,
+} = useGetChatMediaQuery({
+  chatId: _id,
+  subdomain: institution,
+  role,
+}, {
+  skip: tab !== 1 || !_id, // Don't auto-fetch unless needed
+});
+
+useEffect(() => {
     if (tab === 1 && _id) {
       refetchMediaMessages();
     }
@@ -323,37 +324,37 @@ const {
       messageId: msg._id,
     }))
   ) || [];
-
+  
   const images = allFiles.filter((file) => file.fileType === "image");
   const videos = allFiles.filter((file) => file.fileType === "video");
   const documents = allFiles.filter(
     (file) => file.fileType !== "image" && file.fileType !== "video"
   );
-
+  
   const tabs = [
     { label: "Images", data: images },
     { label: "Videos", data: videos },
     { label: "Documents", data: documents },
   ];
-
-//   console.log("mediaMessagesData", mediaMessagesData?.data)
-
-
-useEffect(() => {
-  if (Array.isArray(chatDetail?.data?.isAdmin)) {
-    setSelectedAdmins(chatDetail?.data?.isAdmin);
-  }
-}, [chatDetail?.data?.isAdmin]);
-
-
-
-
-const handleToggleAdminDialog = () => {
-  setAdminDialogOpen(!adminDialogOpen);
-};
-
-const handleAdminToggle = (id) => {
-  setSelectedAdmins((prev) =>
+  
+  //   console.log("mediaMessagesData", mediaMessagesData?.data)
+  
+  
+  useEffect(() => {
+    if (Array.isArray(chatDetail?.data?.isAdmin)) {
+      setSelectedAdmins(chatDetail?.data?.isAdmin);
+    }
+  }, [chatDetail?.data?.isAdmin]);
+  
+  
+  
+  
+  const handleToggleAdminDialog = () => {
+    setAdminDialogOpen(!adminDialogOpen);
+  };
+  
+  const handleAdminToggle = (id) => {
+    setSelectedAdmins((prev) =>
     prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
   );
 };
@@ -362,9 +363,10 @@ const handleUpdateAdmins = async () => {
   await handleToggleUpdate({ isAdmin: selectedAdmins });
   await refetch(); // important: await so that it completes before closing
   handleToggleAdminDialog();
-
-
+  
+  
 };
+
 
 const handleToggleUpdate = async (updatedFields) => {
   try {
@@ -412,6 +414,7 @@ const handleSendMessagesToggle = async (e) => {
   const handleTabChange = (_, newValue) => {
     setTab(newValue);
   };
+  // console.log(creator._id , currentUser._id)
 
   return (
     <TopDialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -462,64 +465,150 @@ const handleSendMessagesToggle = async (e) => {
         <Divider />
 
         <Box p={2}>
-          {tab === 0 && (
-            <Stack spacing={2}>
-              <Typography variant="h6">Creator</Typography>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Typography>Name:</Typography>
-                <Typography>{isGroup ? creator.fullname : filteredMembers[0]?.name}</Typography>
-                <Typography>Role:</Typography>
-                <Typography>{isGroup ? creator.role : filteredMembers[0]?.role}</Typography>
-              </Stack>
+        {tab === 0 && (
+  <Stack spacing={3}>
+    {/* Creator Info */}
+    <Box>
+      <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+        Creator
+      </Typography>
+      <Stack direction="row" spacing={2} alignItems="center" mt={1}>
+        <Typography variant="body1" color="text.secondary">
+          Name:
+        </Typography>
+        <Typography variant="body1">{creator.fullname}</Typography>
+        <Typography variant="body1" color="text.secondary">
+          Role:
+        </Typography>
+        <Typography variant="body1">{creator.role}</Typography>
+      </Stack>
+    </Box>
 
-              {isGroup && (
-                <>
-                  <Divider />
-                  <Typography
-  color="error"
-  sx={{ cursor: "pointer", fontWeight: 500 }}
-  onClick={() => setConfirmOpen(true)}
->
-  🚪 Exit Group
-</Typography>
+    <Divider sx={{ my: 1 }} />
 
-<Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-  <DialogTitle>Are you sure you want to exit the group?</DialogTitle>
-  <DialogActions>
-    <Button onClick={() => setConfirmOpen(false)} disabled={isLoadingExitGroup}>
-      Cancel
-    </Button>
-    <Button
-      onClick={async () => {
-        try {
-          const res = await exitGroup({
-            chatId: _id,
-            subdomain: institution,
-            role,
-          }).unwrap();
-          console.log("res", res);
-          toast.success(res.message || "Exited group successfully");
-         await listRefetch(); // Call refetch to update chat list
-          setConfirmOpen(false);
-          navigate(`/${institution}/${role}/chat`);
-        } catch (err) {
-          toast.error(err?.data?.message || "Failed to exit group");
-        }
-      }}
-      color="error"
-      variant="contained"
-      disabled={isLoadingExitGroup}
-      startIcon={isLoadingExitGroup && <CircularProgress size={18} />}
-    >
-      {isLoadingExitGroup ? "Exiting..." : "Exit"}
-    </Button>
-  </DialogActions>
-</Dialog>
+    {/* Conditional Action */}
+    {!isGroup && creator._id === currentUser._id ? (
+      <Box>
+       
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => setConfirmOpen(true)}
+          startIcon={<span>🗑️</span>}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 500,
+            borderRadius: 2,
+          }}
+        >
+          Delete Chat
+        </Button>
+        <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+          <DialogTitle sx={{ fontWeight: 'bold' }}>Confirm Exit</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to exit the group <strong>{name}</strong>?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmOpen(false)} disabled={isLoadingDeleteChat}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                try {
+                  const res = await deleteChat({
+                    chatId: _id,
+                    subdomain: institution,
+                    role,
+                  }).unwrap();
+
+                  console.log(res)
+                  
+                  toast.success(res.message || "Delete Chat successfully");
+                  await listRefetch();
+                  setConfirmOpen(false);
+                  navigate(`/${institution}/${role}/chat`);
+                } catch (err) {
+                  toast.error(err?.data?.message || "Failed to delete group");
+                }
+              }}
+              color="error"
+              variant="contained"
+              disabled={isLoadingDeleteChat}
+              startIcon={isLoadingDeleteChat && <CircularProgress size={18} />}
+            >
+              {isLoadingDeleteChat ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    ) : isGroup && (
+      <Box>
+        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 1 }}>
+          Group Options
+        </Typography>
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => setConfirmOpen(true)}
+          startIcon={<span>🚪</span>}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 500,
+            borderRadius: 2,
+          }}
+        >
+          Exit Group
+        </Button>
+       
+
+        {/* Confirm Dialog */}
+        <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+          <DialogTitle sx={{ fontWeight: 'bold' }}>Confirm Exit</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to exit the group <strong>{name}</strong>?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmOpen(false)} disabled={isLoadingExitGroup}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                try {
+                  const res = await exitGroup({
+                    chatId: _id,
+                    subdomain: institution,
+                    role,
+                  }).unwrap();
+                  
+                  toast.success(res.message || "Exited group successfully");
+                  await listRefetch();
+                  setConfirmOpen(false);
+                  navigate(`/${institution}/${role}/chat`);
+                } catch (err) {
+                  toast.error(err?.data?.message || "Failed to exit group");
+                }
+              }}
+              color="error"
+              variant="contained"
+              disabled={isLoadingExitGroup}
+              startIcon={isLoadingExitGroup && <CircularProgress size={18} />}
+            >
+              {isLoadingExitGroup ? "Exiting..." : "Exit"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    )}
+  </Stack>
+)}
+            
                 
-                </>
-              )}
-            </Stack>
-          )}
+            
+      
 {tab === 1 && (
    <Box>
    <Tabs

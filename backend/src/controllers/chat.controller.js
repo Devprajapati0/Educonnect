@@ -4,6 +4,7 @@ import { Institution } from "../models/institution.model.js"
 import { createGroupSchema, updatechatSchema } from "../schemas/chat.schema.js"
 import { Chat } from "../models/chat.model.js"
 import { uploadOnCloudinary } from "../helpers/cloudinary.js"
+import mongoose from "mongoose"
 
 
 const createGroupChat = asynhandler(async (req, res) => {
@@ -135,16 +136,9 @@ const getMyChats = asynhandler(async (req, res) => {
       if (chat.groupchat) {
         const rolesInGroup = new Set(chat.members.map((m) => m.role));
         console.log("rolesInGroup", rolesInGroup);
-        const hasNoStudent = !rolesInGroup.has("student");
-        const hasTeacherOrParent = rolesInGroup.has("teacher") || rolesInGroup.has("parent");
-
-        if (
-          role === "admin" ||
-          (role === "parent" && hasNoStudent && hasTeacherOrParent) ||
-          role === "teacher"
-        ) {
+        // const hasNoStudent = !rolesInGroup.has("student");
+        // const hasTeacherOrParent = rolesInGroup.has("teacher") || rolesInGroup.has("parent");
           data.groups.push(chat);
-        }
       } else {
         chat.members.forEach((member) => {
           if (member._id.toString() === _id.toString()) return;
@@ -159,15 +153,15 @@ const getMyChats = asynhandler(async (req, res) => {
             data[member.role + "s"].push(customChat);
           }
       
-          if (role === "parent" && ["teacher", "parent"].includes(member.role)) {
+          if (role === "parent") {
             data[member.role + "s"].push(customChat);
           }
       
-          if (role === "teacher" && ["teacher", "student", "parent", "admin"].includes(member.role)) {
+          if (role === "teacher" ) {
             data[member.role + "s"].push(customChat);
           }
       
-          if (role === "student" && ["teacher", "student"].includes(member.role)) {
+          if (role === "student") {
             data[member.role + "s"].push(customChat);
           }
         });
@@ -177,6 +171,43 @@ const getMyChats = asynhandler(async (req, res) => {
     return res.json(new apiresponse(200, data, "All chats fetched successfully"));
   } catch (error) {
     console.error(error);
+    return res.json(new apiresponse(500, null, "Internal Server Error"));
+  }
+});
+const deleteChat = asynhandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Unauthorized Access"));
+    }
+
+    const { chatId } = req.body;
+
+    // Check if chatId exists and is a valid ObjectId
+    if (!chatId || chatId === "undefined") {
+      return res.json(new apiresponse(400, null, "Chat ID is required"));
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.json(new apiresponse(400, null, "Invalid Chat ID format"));
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.json(new apiresponse(404, null, "Chat not found"));
+    }
+   console.log("chat", chat)
+    if (chat.institution.toString() !== req.user.institution._id.toString()) {
+      return res.json(new apiresponse(403, null, "Access denied"));
+    }
+
+    if (chat.creator._id.toString() !== req.user._id.toString()) {
+      return res.json(new apiresponse(403, null, "Only the creator can delete this chat"));
+    }
+
+    await Chat.findByIdAndDelete(chatId);
+    return res.json(new apiresponse(200, null, "Chat deleted successfully"));
+  } catch (error) {
+    console.error("Delete Chat Error:", error);
     return res.json(new apiresponse(500, null, "Internal Server Error"));
   }
 });
@@ -336,4 +367,4 @@ const exitGroup = asynhandler(async (req, res) => {
   }
 });
 
-export { createGroupChat,getMyChats,getChatDetails,updateChatDetail,exitGroup }
+export { createGroupChat,getMyChats,getChatDetails,updateChatDetail,exitGroup,deleteChat }

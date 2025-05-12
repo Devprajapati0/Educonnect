@@ -12,7 +12,7 @@ import {
 import BusinessIcon from "@mui/icons-material/Business"
 import toast from "react-hot-toast"
 import { useAddRoleSignupMutation } from "../../store/api/api"
-import { Leftbar } from "./Leftbar.jsx"
+import Leftbar from "../common/Leftbar"
 
 
 function getSubdomainName() {

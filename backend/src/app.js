@@ -73,7 +73,7 @@ io.on("connection", (socket) => {
     });
     
     socket.on(NEW_GROUP_MESSAGE, async ({ messages = [] }) => {
-        //  console.log("New group message received:", messages);
+          console.log("New group message received:", messages);
       for (const msg of messages) {
         const messageForRealTime = {
           content: msg.encryptedMessage,
@@ -119,6 +119,7 @@ io.on("connection", (socket) => {
             name: user.name,
             avatar: user.avatar,
             role: user.role,
+            publicKey: user.publicKey,
           },
           chat: chatId,
         createdAt: new Date().toISOString(),

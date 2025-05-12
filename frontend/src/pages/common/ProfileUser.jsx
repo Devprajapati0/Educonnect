@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import moment from 'moment';
 import toast from 'react-hot-toast';
-import { Leftbar } from '../admin/Leftbar';
+import Leftbar from '../common/Leftbar';
 import axios from 'axios';
 
 function getInstitutionAndRoleFromPath() {
@@ -168,14 +168,12 @@ const ProfileUser = () => {
               {info.role === 'student' && (
                 <>
                   <InfoItem label="Batch" value={info.batch} />
-                  <InfoItem label="Year" value={info.year} />
                   <InfoItem label="Department" value={info.department} />
                 </>
               )}
               {info.role === 'teacher' && (
                 <>
                   <InfoItem label="Department" value={info.department} />
-                  <InfoItem label="Subjects" value={info.subjects?.join(', ')} />
                 </>
               )}
               {info.role === 'parent' && (

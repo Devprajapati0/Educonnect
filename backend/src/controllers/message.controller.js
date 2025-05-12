@@ -90,6 +90,7 @@ const sendMessageController = asynhandler(async (req, res) => {
       name: user.name,
       avatar: user.avatar,
       role: user.role,
+      publicKey: user.publicKey,
     },
     chat: chatId,
     createdAt: new Date().toISOString(),
@@ -157,7 +158,7 @@ const getIndividualMessageController = asynhandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(resultPerPage)
-      .populate("sender", "name avatar role")
+      .populate("sender", "name avatar role publicKey")
       .lean(),
        Message.countDocuments({
       chat: chatId,
@@ -224,7 +225,7 @@ const getChatMediaController = asynhandler(async (req, res) => {
     attachments: { $exists: true, $ne: [] }  // non-empty attachments
   })
     .sort({ createdAt: -1 })
-    .populate("sender", "name avatar role")
+    .populate("sender", "name avatar role publicKey")
     .lean();
 
   return res.json(new apiresponse(200, mediaMessages, "Media messages fetched successfully"));

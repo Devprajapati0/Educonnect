@@ -20,7 +20,7 @@ export const userSignupSchema = z.object({
   role: z.enum(["admin", "teacher", "student", "parent"], {
     required_error: "Role is required",
   }),
-  avatar: z.string().optional(),
+  avatar: z.string().nullable().optional(),
 
   subdomain: z.string({ required_error: "Subdomain is required" }),
 

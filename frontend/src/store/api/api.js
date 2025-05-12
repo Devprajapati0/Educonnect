@@ -158,7 +158,15 @@ const api = createApi({
           query: (data) => ({
             url: `/${data.subdomain}/${data.role}/get-public-key`,
             method: 'POST',
-            body: data.userId,
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        deleteChat : builder.mutation({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/delete-chat`,
+            method: 'POST',
+            body: data,
             headers: { 'Content-Type': 'application/json' },
           }),
         }),
@@ -167,6 +175,6 @@ const api = createApi({
 
 export const {useGetInstituteProfileQuery,useUpdateInstituteProfileMutation,useAddRoleSignupMutation,useUpdateUserPasswordMutation,useGetMyChatsQuery,useGetAllUsersBasedOnRoleQuery,
     useCreateGroupChatMutation,useGetUserForGroupsQuery,useGetMessagesQuery,useGetChatDetailQuery,useSendAttachmentsMutation,useGetUserProfileQuery,useUpdateUserProfileMutation,useUpDateChatDetailMutation
-,useGetChatMediaQuery,useExitGroupMutation,useGetPublicKeyQuery
+,useGetChatMediaQuery,useExitGroupMutation,useGetPublicKeyQuery,useDeleteChatMutation
 } = api
 export default api;

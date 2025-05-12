@@ -7,19 +7,18 @@ import SettingsIcon from "@mui/icons-material/Settings"
 import React from "react"
 import { UserIcon } from "lucide-react"
 
-function getSubdomainName() {
+function getInstitutionAndRoleFromPath() {
   const pathname = window.location.pathname
   const parts = pathname.split("/").filter(Boolean)
 
-  if (parts.length > 0) {
-    return parts[0].charAt(0) + parts[0].slice(1)
-  }
+  const institution = parts[0] || "EduConnect"
+  const role = parts[1] || "guest"
 
-  return "EduConnect"
+  return { institution, role }
 }
 
-export const Leftbar = () => {
-  const subdomain = getSubdomainName()
+ const Leftbar = () => {
+  const {institution,role} = getInstitutionAndRoleFromPath()
   const navigate = useNavigate()
 
   return (
@@ -36,36 +35,32 @@ export const Leftbar = () => {
         gap: 3,
         borderRight: "1px solid #1f2937",
       }}
-    >
+    >{role =="admin" &&
       <Tooltip title="Dashboard" placement="right">
-        <IconButton onClick={() => navigate(`/${subdomain}/admin/dashboard`)} sx={{ color: "white" }}>
+        <IconButton onClick={() => navigate(`/${institution}/${role}/dashboard`)} sx={{ color: "white" }}>
           <Dashboard />
         </IconButton>
-      </Tooltip>
+      </Tooltip>}
 
       <Tooltip title="Chat" placement="right">
-        <IconButton onClick={() => navigate(`/${subdomain}/admin/chat`)} sx={{ color: "white" }}>
+        <IconButton onClick={() => navigate(`/${institution}/${role}/chat`)} sx={{ color: "white" }}>
           <ChatIcon />
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Calls" placement="right">
-        <IconButton sx={{ color: "white" }}>
-          <CallIcon />
-        </IconButton>
-      </Tooltip>
 
-      <Tooltip title="Add User" placement="right">
-        <IconButton onClick={() => navigate(`/${subdomain}/admin/add-user`)} sx={{ color: "white" }}>
+      {role == "admin" && <Tooltip title="Add User" placement="right">
+        <IconButton onClick={() => navigate(`/${institution}/${role}/add-user`)} sx={{ color: "white" }}>
           <UserIcon />
         </IconButton>
-      </Tooltip>
+      </Tooltip>}
 
       <Tooltip title="Settings" placement="right">
-        <IconButton onClick={() => navigate(`/${subdomain}/admin/update-profile`)} sx={{ color: "white" }}>
+        <IconButton onClick={() => navigate(`/${institution}/${role}/update-profile`)} sx={{ color: "white" }}>
           <SettingsIcon />
         </IconButton>
       </Tooltip>
     </Box>
   )
 }
+export default Leftbar

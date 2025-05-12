@@ -386,8 +386,9 @@ const getUserForGroups = asynhandler(async (req, res) => {
     }
 
     const { _id, role, institution } = req.user;
+    console.log("getUserForGroups", req.user);
 
-    // Base filter: exclude self and match institution
+    // Base filter: exclude self, match institution, ensure publicKey exists
     let filter = {
       _id: { $ne: _id },
       "institution._id": institution._id,
@@ -395,20 +396,27 @@ const getUserForGroups = asynhandler(async (req, res) => {
     };
 
     // Role-based filtering logic
-    if (role === "Teacher") {
-      filter.role = { $in: ["Student", "Teacher"] };
-    } else if (role === "Student" || role === "Parent") {
-      filter.role = "Teacher";
+    if (role === "admin") {
+      // Admins can see all (no role filter)
+    } else if (role === "teacher") {
+      filter.role = { $in: ["student", "parent","teacher"] };
+    } else if (role === "student" ) {
+      filter.role = { $in: ["student","teacher"] };
+    } 
+    else if (role === "parent") {
+      filter.role = { $in: ["parent","teacher"] };
     }
-    // Admin can see all, so no role filter
-
-    // console.log("Group User Filter:", filter);
+    else {
+      // fallback: deny if role not recognized
+      return res.json(new apiresponse(403, null, "Unauthorized role"));
+    }
 
     const users = await User.find(filter).select("_id name role email avatar publicKey");
 
     if (!users || users.length === 0) {
       return res.json(new apiresponse(404, null, "No users found"));
     }
+    console.log("Filtered Users:", users);
 
     return res.json(new apiresponse(200, users, "Available users to start new group"));
   } catch (error) {
@@ -523,6 +531,8 @@ const getPublicKey = asynhandler(async(req,res) => {
     return res.json(new apiresponse(500, null, "Failed to fetch public key"));
   }
 })
+
+
 
 export {
     userSignup,

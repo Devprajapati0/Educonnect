@@ -277,4 +277,4 @@ const ChatList = ({
   );
 };
 
-export { ChatList };
+export default ChatList ;

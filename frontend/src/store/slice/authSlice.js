@@ -9,6 +9,7 @@ const initialState = {
     email:"",
     avatar:"",
     token:"",
+    publicKey:"",
   },
   isAuthenticated: false,
   isFileOpen:false,

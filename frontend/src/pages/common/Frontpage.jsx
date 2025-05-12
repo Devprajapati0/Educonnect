@@ -71,23 +71,11 @@ export default function Frontpage() {
         }
       )
          
+      let publicKeyer = null;
          if(response.data.success){
           // console.log('response',response)
-        const user = response.data.data.user
-        //  console.log('usersss',user)
-        dispatch(login({
-          user: {
-            _id: user._id,
-            username: user.name,
-            email: user.email,
-            role: user.role,
-            avatar: user.avatar,
-            token:response.data.data.token
-          },
-          isAuthenticated: true,
-        }))
+        
         toast.success(response.data.message || "Login successful")
-
         if(response.data.data.user.publicKey == null){
           console.log('public key required')
 
@@ -111,8 +99,26 @@ export default function Frontpage() {
           else{
             toast.error(responseother.data.message)
           }
+          publicKeyer = responseother.data.data.publicKey
         }
-        navigate(`/${subdomain}/${role}/dashboard`)
+        publicKeyer =  publicKeyer || response.data.data.user.publicKey 
+        const user = response.data.data.user
+        //  console.log('usersss',user)
+        dispatch(login({
+          user: {
+            _id: user._id,
+            username: user.name,
+            email: user.email,
+            role: user.role,
+            avatar: user.avatar,
+            token:response.data.data.token,
+            publicKey:publicKeyer,
+          },
+          isAuthenticated: true,
+        }))
+
+        
+       navigate((role === "admin") ? `/${subdomain}/${role}/dashboard` : `/${subdomain}/${role}/chat`)
       }
         else{
           toast.error(response.data.message)
@@ -199,6 +205,7 @@ export default function Frontpage() {
               onChange={(e) => setRole(e.target.value)}
             >
               <MenuItem value="student">Student</MenuItem>
+              <MenuItem value="parent">Parent</MenuItem>
               <MenuItem value="teacher">Teacher</MenuItem>
               <MenuItem value="admin">Admin</MenuItem>
             </Select>

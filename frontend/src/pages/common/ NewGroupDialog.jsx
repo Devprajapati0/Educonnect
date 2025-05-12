@@ -148,7 +148,7 @@ export default function NewGroupDialog({refetch, open, onClose }) {
               fontWeight: "bold",
             }}
           >
-            <Typography variant="h6">Add Members</Typography>
+            <Typography variant="body1">Add Members</Typography>
             <Button
               onClick={handleNext}
               disabled={selectedUsers.length === 0}

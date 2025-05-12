@@ -1,12 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState ,useMemo, Fragment} from "react"
-import { Box, Grid, CircularProgress, Stack,Avatar,Typography, IconButton, Menu, MenuItem, Dialog, DialogTitle,Button, DialogContent, TextField, DialogActions } from "@mui/material"
-import { useGetChatDetailQuery, useGetMessagesQuery, useGetMyChatsQuery, useGetPublicKeyQuery, useSendAttachmentsMutation } from "../../store/api/api.js"
+import { Box,Stack,Avatar,Typography, IconButton, Menu, MenuItem, Dialog, DialogTitle,Button, DialogContent, TextField, DialogActions } from "@mui/material"
+import { useGetChatDetailQuery, useGetMessagesQuery, useGetPublicKeyQuery, useSendAttachmentsMutation } from "../../store/api/api.js"
 import toast from "react-hot-toast"
-import { ChatList } from "../common/ChatList.jsx"
-import { useSocket } from "../../socket/Socket.jsx"
 import { useSelector,useDispatch } from "react-redux"
 import { useParams } from "react-router-dom"
-import { Leftbar } from "./Leftbar.jsx"
 import {useInfiniteScrollTop} from "6pp"
 import { setFileOpen } from "../../store/slice/authSlice.js"
 import { incrementNotification, removeNewMessageAlert, setNewMessageAlert } from "../../store/slice/chatSlice.js"
@@ -19,7 +16,7 @@ import ChatInfoDialog from "../common/ChatInfoDialog.jsx"
 import {encryptAndSign} from "../../helpers/cryptoutils.js"
 import * as openpgp from "openpgp";
 import { getKey } from "../../helpers/key.js"
-import { setPublicKey } from "../../store/slice/publicSlice.js"
+// import { setPublicKey } from "../../store/slice/publicSlice.js"
 
 
 export const InputBox = styled('input')`
@@ -71,7 +68,7 @@ const Chat = (
   // console.log(currentUser)
   const { institution,role } = getInstitutionAndRoleFromPath()
   // console.log("institution", institution)
-  const {getPublicKey} =useGetPublicKeyQuery()
+  // const {getPublicKey} =useGetPublicKeyQuery()
   const {data:chatData,isLoading:chatfetchLoading} = useGetChatDetailQuery({
     subdomain: institution,
     role: role,
@@ -251,22 +248,11 @@ const [isReceiving, setIsReceiving] = useState(false);
         const message = await openpgp.readMessage({
           armoredMessage: encryptedAndSignedMessage,
         });
-        console.log("message", message)
+        // console.log("messageeeeee", message)
         // STEP 3 load the sender public key
-        if(idData[data.message.sender._id] === undefined){
-          const publicKey =  getPublicKey({
-            subdomain: institution,
-            role: role,
-            userId: data.message.sender._id,
-          }).unwrap();
-          console.log("publicKey", publicKey)
-          dispatch(setPublicKey({
-            _id: data.message.sender._id,
-            publicKey: publicKey,
-          }))
-        }
-  
-        const senderPublicKeyArmored = idData[data.message.sender._id];
+       
+        console.log("data.message.sender.publicKey", data.message.sender.publicKey)
+        const senderPublicKeyArmored = data.message.sender.publicKey;
         console.log("senderPublicKeyArmored", senderPublicKeyArmored)
         const senderPublicKey = await openpgp.readKey({ armoredKey: senderPublicKeyArmored });
         console.log("senderPublicKey", senderPublicKey)
@@ -301,6 +287,7 @@ const [isReceiving, setIsReceiving] = useState(false);
             name: data.message.sender.name,
             avatar: data.message.sender.avatar,
             role: data.message.sender.role,
+            publicKey: data.message.sender.publicKey,
           },
           chat: data.message.chat,
           createdAt: data.message.createdAt,
@@ -413,25 +400,12 @@ const [isReceiving, setIsReceiving] = useState(false);
     const decrypted = [];
 
     for(const msg of oldMessages){
-      // console.log("msg", msg)
+       console.log("msg", msg)
       try {
-        const senderId= msg.sender._id;
-        let senderPublicKeyArmored = idData[senderId];
+        
+        let senderPublicKeyArmored = msg.sender.publicKey;
         // console.log("senderPublicKeyArmored", senderPublicKeyArmored)
-        if(!senderPublicKeyArmored){
-          senderPublicKeyArmored =  getPublicKey({
-            subdomain: institution,
-            role: role,
-            userId: senderId,
-          }).unwrap();
-
-          // console.log("senderPublicKeyArmored", senderPublicKeyArmored)
-
-          dispatch(setPublicKey({
-            _id: senderId,
-            publicKey: senderPublicKeyArmored,
-          }))
-        }
+       
         const senderPublicKey = await openpgp.readKey({armoredKey: senderPublicKeyArmored});
         // console.log("senderPublicKey", senderPublicKey)
 
@@ -483,7 +457,7 @@ const [isReceiving, setIsReceiving] = useState(false);
 
   const sendMessageHandler = async(event) => {
     event.preventDefault()
-    // console.log("sendMessageHandler",message)
+     console.log("sendMessageHandler",message)
     if(!message) return;
     setIsSending(true);
     const memebers = chatData?.data?.members;
@@ -495,20 +469,14 @@ const [isReceiving, setIsReceiving] = useState(false);
     // console.log("filteredMembers", filteredMembers)
     const encryptedMessage = [];
     for(const memeber of memebers){
-      // console.log("memeber", memeber)
-      dispatch(setPublicKey(
-        {
-          _id: memeber._id,
-          publicKey: memeber.publicKey,
-        }
-      ))
+       console.log("memeber", memeber)
       // console.log("messagessss",message)
       // if (member._id.toString() === currentuser.user._id) continue;
       const passphrase = ""; // Replace with the passphrase if your private key is encrypted
       const signedMessage = await encryptAndSign(message,memeber.publicKey,privateKey,passphrase)
       // console.log("signedMessage", signedMessage)
       // console.log("message", message)
-      
+      // console.log("cyruunueneneeeeeee",currentUser)
       encryptedMessage.push({
         to: memeber._id,
         from: {
@@ -516,12 +484,14 @@ const [isReceiving, setIsReceiving] = useState(false);
           name: currentUser.username,
           avatar: currentUser.avatar,
           role: currentUser.role,
+          publicKey: currentUser.publicKey,
         },
         encryptedMessage: signedMessage,
         chatId: id,
     }
       )
     }
+    // console.log("iddata",)
 
     if(!message) return;
 
@@ -614,12 +584,7 @@ const [isReceiving, setIsReceiving] = useState(false);
  
     // console.log("memebers", memebers)
     for(const memeber of memebers){
-      dispatch(setPublicKey(
-        {
-          _id: memeber._id,
-          publicKey: memeber.publicKey,
-        }
-      ))
+    
       // console.log("messagessss",message)
       // if (member._id.toString() === currentuser.user._id) continue;
       const passphrase = ""; // Replace with the passphrase if your private key is encrypted
@@ -648,6 +613,7 @@ const [isReceiving, setIsReceiving] = useState(false);
           name: currentUser.username,
           avatar: currentUser.avatar,
           role: currentUser.role,
+          publicKey: currentUser.publicKey,
         },
         chat: id,
         createdAt: new Date().toISOString(),
@@ -866,154 +832,4 @@ const [isReceiving, setIsReceiving] = useState(false);
   )
 }
 
-const Adminchat = () => {
-  const socket = useSocket()
-  const [onlineUsers, setOnlineUsers] = useState([])
-  
-  // console.log("onlineUsers", onlineUsers)
-    // console.log("sdddocket", socket)
-  const AlertData = useSelector((state) => state.chat)
-  const { institution, role } = getInstitutionAndRoleFromPath()
-  const [flag, setFlag] = useState(false)
-  const categories = ["students", "teachers", "parents", "groups","admins"];
-
-  const { data, isLoading, isError, refetch } = useGetMyChatsQuery({
-    subdomain: institution,
-    role: role,
-  })
-
-  //  console.log("data", data)
-  const isBoolRef = useRef(true);
-  useEffect(() => {
-    if (!socket) return;
-  
-    // Handle online users
-    const handleOnlineUsers = (userIds) => {
-      setOnlineUsers(userIds);
-    };
-  
-    // Request current online users
-    socket.emit("GET_ONLINE_USERS", { subdomain: institution });
-    socket.on("ONLINE_USERS", handleOnlineUsers);
-  
-    // Join all chats
-    const { groups = [], students = [], teachers = [], parents = [], admins = [] } = data?.data || {};
-    const allChats = [...groups, ...students, ...teachers, ...parents, ...admins];
-    const chatIds = allChats.map(chat => chat._id).filter(Boolean);
-  
-    socket.emit("JOIN_CHATS", chatIds);
-    isBoolRef.current = chatIds.length > 0;
-  
-    // Refetch if flag is true
-    if (flag) {
-      refetch();
-      setFlag(false);
-    }
-  
-    // Cleanup
-    return () => {
-      // socket.off("ONLINE_USERS", handleOnlineUsers);
-    };
-  }, [flag, socket, data, refetch, institution]);
-
-  // const dates = useSelector((state) => state.chat.avatar);
-  // console.log("dates", dates)
-
-  const chats = data?.data || []
-
-  
-
-  // if (isLoading) {
-  //   return (
-  //     <Box
-  //       sx={{
-  //         display: "flex",
-  //         justifyContent: "center",
-  //         alignItems: "center",
-  //         height: "100vh",
-  //         backgroundColor: "#f0f2f5",
-  //       }}
-  //     >
-  //       <CircularProgress />
-  //     </Box>
-  //   )
-  // }
-
-  // if (isError) {
-  //   toast.error("Something went wrong")
-  //   return null
-  // }
-
-  return (
-   <Box className="h-screen flex" >
-  <Grid container sx={{width:"100%", height: "100%" }}>
-
-    <Grid item sx={{ width: 80, backgroundColor: "#0e1c2f" }}>
-      <Leftbar />
-    </Grid>
-
-    {/* CHAT LIST */}
-    <Grid
-            item
-            sm={4}
-            md={3}
-            lg={2}
-            sx={{
-              display: { xs: "none", sm: "block" },
-              bgcolor: "#f5f5f5",
-              p: 1,
-              borderRight: "1px solid #ccc",
-              overflowY: "auto",
-            }}
-          >
-          {
-            isLoading ? (
-              <div style={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <CircularProgress />
-              </div>
-            ) : isError ? (
-              <div style={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <p>Error loading chats</p>
-              </div>
-            ) : (
-              <div style={{ height: "100%", overflowY: "auto" }}>
-                <ChatList
-                  categorizedChats={chats}
-                  flag={flag}
-                  setFlag={setFlag}
-                  newMessageAlert={AlertData.newMessageAlert}
-                  categories={categories}
-                  onlineUsers={onlineUsers}
-                  refetch={refetch}
-                />
-              </div>
-            )
-          }
-      
-    </Grid>
-
-    {/* CHAT AREA */}
-    <Grid
-            item
-            xs={12}
-            sm={8}
-            md={9}
-            lg={10}
-            sx={{
-              bgcolor: "#ffffff",
-              display: "flex",
-              flexDirection: "column",
-              height: "100%",
-              overflow: "hidden",
-            }}
-          >
-      <Chat 
-        socket={socket} refetch={refetch}
-       />
-    </Grid>
-  </Grid>
-</Box>
-  )
-}
-
-export default Adminchat
+export default Chat
