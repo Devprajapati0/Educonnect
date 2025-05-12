@@ -20,6 +20,7 @@ const Dashboard = lazy(() => import('./pages/admin/Dashboard.jsx'))
 const Adduser = lazy(() => import('./pages/admin/Adduser.jsx'))
 const Forgotpassword = lazy(() => import('./pages/common/Forgotpassword.jsx'))
 const ProfileUser = lazy(() => import('./pages/common/ProfileUser.jsx'))
+
 // const Adminchat = lazy(() => import('./pages/admin/Adminchat.jsx'))
 const App = () => {
   return (

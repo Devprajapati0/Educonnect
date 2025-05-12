@@ -244,10 +244,11 @@ const ChatInfoDialog = ({ open, onClose, isGroup, avatar, name, _id,refetch:list
   );
 
   const allUsersList = allUsers || [];
-  console.log("secete",selectedUsers)
+  // console.log("secete",selectedUsers)
 //   console.log("allUsersList", allUsersList)
 //   console.log("cahtData", chatDetail?.data)
 const handleUpdateMembers = async (updatedMembers) => {
+  // console.log("updatedMembers", updatedMembers)
     const data = {
       chatId: _id, // your current chat ID
       members: updatedMembers.map((u) => ({
@@ -255,6 +256,7 @@ const handleUpdateMembers = async (updatedMembers) => {
         name: u.name,
         role: u.role,
         avatar: u.avatar,
+        publicKey: u.publicKey,
       })),
     };
 

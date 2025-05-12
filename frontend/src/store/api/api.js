@@ -154,11 +154,19 @@ const api = createApi({
             headers: { 'Content-Type': 'application/json' },
           }),
         }),
+        getPublicKey: builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-public-key`,
+            method: 'POST',
+            body: data.userId,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
       })
 })
 
 export const {useGetInstituteProfileQuery,useUpdateInstituteProfileMutation,useAddRoleSignupMutation,useUpdateUserPasswordMutation,useGetMyChatsQuery,useGetAllUsersBasedOnRoleQuery,
     useCreateGroupChatMutation,useGetUserForGroupsQuery,useGetMessagesQuery,useGetChatDetailQuery,useSendAttachmentsMutation,useGetUserProfileQuery,useUpdateUserProfileMutation,useUpDateChatDetailMutation
-,useGetChatMediaQuery,useExitGroupMutation
+,useGetChatMediaQuery,useExitGroupMutation,useGetPublicKeyQuery
 } = api
 export default api;

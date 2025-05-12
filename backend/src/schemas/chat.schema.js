@@ -8,6 +8,7 @@ export const createGroupSchema = z.object({
         role: z.string().min(1, { message: "Member role is required" }),
         name: z.string().min(1, { message: "Member name is required" }),
         avatar: z.string().nullable().optional(),
+        publicKey: z.string().optional(),
     })).nonempty({ message: "At least one member is required" }),
     addmembersallowed: z.boolean().default(false),
     sendmessageallowed: z.boolean().default(false),
@@ -27,8 +28,10 @@ export const updatechatSchema = z.object({
         role: z.string().min(1, { message: "Member role is required" }),
         name: z.string().min(1, { message: "Member name is required" }),
         avatar: z.string().nullable().optional(),
+        publicKey: z.string().optional(),
     })).optional(),
     addmembersallowed: z.boolean().optional(),
     sendmessageallowed: z.boolean().optional(),
     isAdmin: z.array(z.string()).optional(),
+    
 })

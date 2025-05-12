@@ -51,7 +51,7 @@ const createGroupChat = asynhandler(async (req, res) => {
     console.log("req.file", req.file)
     console.log("image", image)
 
-    const allmembers=[...members, {_id,role,name:req.user.name,avatar:req.user.avatar}]
+    const allmembers=[...members, {_id,role,name:req.user.name,avatar:req.user.avatar,publicKey:req.user.publicKey}]
       console.log("allmembers", allmembers)
     
     const chatData = {

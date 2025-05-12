@@ -28,7 +28,7 @@ const io = new Server(server,{
         methods: ["GET", "POST"],
 
     },
-    maxHttpBufferSize: 100e6 // 10 MB, for example
+    maxHttpBufferSize: 100e6 // 100 MB, for example
 })  
 app.use(express.urlencoded({limit:'500mb',extended:true}))
 app.use(cookieParser())
@@ -92,12 +92,12 @@ io.on("connection", (socket) => {
         };
         try {
           const savedMessage = await Message.create(messageForDB);
-          // console.log("Message saved to DB:", savedMessage);
+           console.log("Message saved to DB:", savedMessage);
         } catch (error) {
           console.error("Error saving message to DB:", error);
         }
 
-        // console.log("messafe ec",messageForRealTime)
+        console.log("messafe ec",messageForRealTime)
 
         
         io.to(msg.chatId).emit(NEW_MESSAGE, {
@@ -130,7 +130,7 @@ io.on("connection", (socket) => {
         chatId,
         message: messageForRealtime,
       });
-  
+      
       io.to(chatId).emit(NEW_MESSAGE_ALERT, { chatId });
   
     });

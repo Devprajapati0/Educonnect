@@ -1,5 +1,5 @@
 import {Router} from 'express';
-import {userSignup,loginUser,updatePublicKey, updateUserPasssword,updateUserProfile,getUserProfile, getAllUsersBasedOnRole,getUserForGroups} from '../controllers/user.controller.js';
+import {userSignup,loginUser,updatePublicKey, updateUserPasssword,updateUserProfile,getUserProfile, getAllUsersBasedOnRole,getUserForGroups,getPublicKey} from '../controllers/user.controller.js';
 import {createGroupChat,getChatDetails,updateChatDetail,getMyChats,exitGroup} from '../controllers/chat.controller.js';
 import { getIndividualMessageController,getChatMediaController} from '../controllers/message.controller.js';
 import { upload } from '../middlewares/multer.middleware.js';
@@ -15,6 +15,7 @@ router.route('/get-all-users').get(userAuthenticator,getAllUsersBasedOnRole)
 router.route('/get-user-for-group').get(userAuthenticator,getUserForGroups);
 router.route('/get-user-profile').get(userAuthenticator,getUserProfile);
 router.route('/update-user-profile').post(userAuthenticator,updateUserProfile);
+router.route('/get-public-key').post(userAuthenticator,getPublicKey);
 
 
 //chat
@@ -25,9 +26,6 @@ router.route('/update-chat').post(userAuthenticator,updateChatDetail);
 router.route('/exit-group').post(userAuthenticator,exitGroup);
 
 //message
-// router.route('/send-message').post(userAuthenticator,
-//     upload.array('attachments', 10)
-//     ,sendMessageController);
 router.route('/get-all-messages/:chatId').get(userAuthenticator,getIndividualMessageController);
 router.route('/get-chat-media').post(userAuthenticator,getChatMediaController);
 

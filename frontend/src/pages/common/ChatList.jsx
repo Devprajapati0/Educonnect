@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
   Stack,
   Divider,
@@ -45,14 +46,16 @@ const ChatList = ({
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
+    navigate(`/${institution}/${role}/chat/`); 
   };
   // const onlineUserSet = new Set(onlineUsers);
 
   const chats = categorizedChats[selectedTab] || [];
   const { institution, role } = getInstitutionAndRoleFromPath();
   const [createGroupChat] = useCreateGroupChatMutation();
-
+  const navigate = useNavigate();
   const handleStartChat = async(user) => {
+    // console.log("Selected user for chat:", user);
     const avatar = user.avatar || null;
     const chatData = {
       name: user.name,
@@ -65,6 +68,7 @@ const ChatList = ({
           role: user.role,
           name: user.name,
           avatar: avatar,
+          publicKey: user.publicKey,
         },
       ],
       groupchat: false,
@@ -203,7 +207,6 @@ const ChatList = ({
           <Stack spacing={1}>
             {chats.length > 0 ? (
               chats.map((chat) => {
-                console.log("Chat", chat);
                 const alert = newMessageAlert?.find(
                   (item) => item.chatId === chat._id
                 );

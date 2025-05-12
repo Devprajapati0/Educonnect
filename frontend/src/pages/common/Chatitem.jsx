@@ -27,6 +27,7 @@ const ChatItem = React.memo(function ChatItem({
 }) {
   // console.log("isOnline",isOnline)
   // console.log("alert",newMessageAlert)
+  
   const theme = useTheme();
    const dispatch = useDispatch();
     const handleClick = () => {

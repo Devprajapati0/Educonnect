@@ -40,7 +40,7 @@ export default function NewChatDialogContent({ data, onStartChat,refetch }) {
 
   return (
     <Box
-      className="w-full sm:w-[400px] p-5 space-y-4"
+      className="w-full sm:w-[600px] p-5 space-y-4"
       sx={{
         backgroundColor: "#ffffff",
         color: "#000000",
@@ -106,7 +106,7 @@ export default function NewChatDialogContent({ data, onStartChat,refetch }) {
 
               <List dense disablePadding>
                 {users.map((user) => (
-                  console.log("user88888", user),
+                  // console.log("user88888", user),
                   <ListItem
                     key={user._id}
                     button
@@ -117,6 +117,7 @@ export default function NewChatDialogContent({ data, onStartChat,refetch }) {
                         email: user.email,
                         avatar: user.avatar, // Pass avatar
                         role: user.role,
+                        publicKey: user.publicKey,
                       })
                     }
                     sx={{

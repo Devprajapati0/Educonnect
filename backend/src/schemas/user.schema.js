@@ -28,6 +28,7 @@ export const userSignupSchema = z.object({
   department: z.string().optional(),
   parentofname: z.string().optional(),
   parentofemail:z.string().optional(),
+  
 }).refine((data) => {
   if (data.role === "student" && !data.batch) return false;
   if (data.role === "teacher" && !data.department) return false;

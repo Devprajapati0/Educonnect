@@ -142,7 +142,7 @@ export default function GroupDetailsStep({
       {/* Members */}
       <Box>
         <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-          MEMBERS: {selectedUsers.length} OF 1,023
+          MEMBERS: 
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {selectedUsers.map((user) => (

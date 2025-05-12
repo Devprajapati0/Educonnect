@@ -14,6 +14,7 @@ import toast from "react-hot-toast"
 import { useAddRoleSignupMutation } from "../../store/api/api"
 import { Leftbar } from "./Leftbar.jsx"
 
+
 function getSubdomainName() {
   const pathname = window.location.pathname
   const parts = pathname.split("/").filter(Boolean)
@@ -128,6 +129,7 @@ function Adduser() {
         parentofemail: "",
         parentofname: "",
         avatar: null,
+        
       })
       setAvatar(null)
     } catch (err) {

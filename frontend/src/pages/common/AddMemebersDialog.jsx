@@ -43,6 +43,7 @@ export default function AddMembersDialog({
     }, [open, existingMembers]);
   
     const handleToggle = (user) => {
+      console.log('Toggling user:', user);
       const exists = selected.some((u) => u._id === user._id);
       if (exists) {
         setSelected((prev) => prev.filter((u) => u._id !== user._id));

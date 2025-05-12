@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState ,useMemo, Fragment} from "react"
 import { Box, Grid, CircularProgress, Stack,Avatar,Typography, IconButton, Menu, MenuItem, Dialog, DialogTitle,Button, DialogContent, TextField, DialogActions } from "@mui/material"
-import { useGetChatDetailQuery, useGetMessagesQuery, useGetMyChatsQuery, useSendAttachmentsMutation } from "../../store/api/api.js"
+import { useGetChatDetailQuery, useGetMessagesQuery, useGetMyChatsQuery, useGetPublicKeyQuery, useSendAttachmentsMutation } from "../../store/api/api.js"
 import toast from "react-hot-toast"
 import { ChatList } from "../common/ChatList.jsx"
 import { useSocket } from "../../socket/Socket.jsx"
@@ -15,8 +15,12 @@ import MessageCompopnent from "../common/MessageCompopnent.jsx"
 import { AttachFile } from "@mui/icons-material"
 import { Loader, SendIcon } from "lucide-react"
 import {styled} from "@mui/material"
-import { GroupIcon } from "lucide-react"
 import ChatInfoDialog from "../common/ChatInfoDialog.jsx"
+import {encryptAndSign} from "../../helpers/cryptoutils.js"
+import * as openpgp from "openpgp";
+import { getKey } from "../../helpers/key.js"
+import { setPublicKey } from "../../store/slice/publicSlice.js"
+
 
 export const InputBox = styled('input')`
 width: 100%;
@@ -44,6 +48,7 @@ const Chat = (
   const { id } = useParams()
   
   const avatars = useSelector((state) => state.chat.avatar)
+  const idData = useSelector((state)=>state.publicKey)
   //  console.log("avatars", avatars)
   // const avatarArray = useSelector((state) => state.chat.avatar || []);
   // console.log("avatarArray", avatarArray)
@@ -66,6 +71,7 @@ const Chat = (
   // console.log(currentUser)
   const { institution,role } = getInstitutionAndRoleFromPath()
   // console.log("institution", institution)
+  const {getPublicKey} =useGetPublicKeyQuery()
   const {data:chatData,isLoading:chatfetchLoading} = useGetChatDetailQuery({
     subdomain: institution,
     role: role,
@@ -95,10 +101,10 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
   const audioRef = useRef();
   const docRef = useRef();
   const typingTimeoutRef = useRef(null);
-  // const bottomRef = useRef(null);
+   const bottomRef = useRef(null);
 
   const [messages, setMessages] = useState([]);
-  const [openInfoDialog, setOpenInfoDialog] = useState(false);
+  // const [openInfoDialog, setOpenInfoDialog] = useState(false);
   const [openInfo, setOpenInfo] = useState(false);
   const [page, setPage] = useState(1);
   const [filePreview, setFilePreview] = useState(null);
@@ -109,6 +115,9 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
   const [iamTyping, setIamTyping] = useState(false);
   const [userIsTyping, setUserIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+const [isReceiving, setIsReceiving] = useState(false);
+
 
   
   
@@ -118,8 +127,8 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
     chatId: id,
     page: page,
   }, {
-    // skip: !id || !currentUser,
-    // refetchOnMountOrArgChange: true,
+    skip: !id || !currentUser,
+    refetchOnMountOrArgChange: true,
   })
   useEffect(() => {
     const refetch = async () => {
@@ -137,8 +146,7 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
   
   const {data:oldMessages ,
     isLoading:oldMessagesLoading,
-    // isError:oldMessagesError,
-     setData:setOldMessages,refetch:refetchOldMessages} = useInfiniteScrollTop(
+     setData:setOldMessages} = useInfiniteScrollTop(
     containerRef,
     oldMessageChunk?.data?.totalPages,
     page,
@@ -165,15 +173,18 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
           clearTimeout(typingTimeoutRef.current);
         }
       }
-    },[dispatch, id])
+    },[dispatch, id, setOldMessages]) //1 change 
   
-    // useEffect(() => {
-    //   if (bottomRef.current)
-    //     bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    // }, [messages]);
+    useEffect(() => {
+      if (bottomRef.current) {
+        setTimeout(() => {
+          bottomRef.current.scrollIntoView({ behavior: "smooth" });
+        }, 300);
+      }
+    }, [messages]); // Make sure this includes messages
 
   const newMessageAlertHandler = useCallback((data) => {
-    console.log("newMessageAlertHandler", data)
+     console.log("newMessageAlertHandler", data)
     if (!data) return;
     if(data.chatId == id) return;
     dispatch(setNewMessageAlert({ chatId: data.chatId }))
@@ -203,6 +214,17 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
       }, 4000);
     }
   }, [id, currentUser?._id])
+
+  const getRecipentPrivateKey = async () => {
+    const privateKey = await getKey("privateKey");
+    console.log("privateKey", privateKey)
+    if(!privateKey) {
+      toast.error("Private key not found");
+      return null;
+    }
+    return privateKey;
+  }
+
   const newMessageHandler = useCallback(
     async (data) => {
       if (!data) return;
@@ -212,8 +234,90 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
       const isSender = data.message.sender._id === currentUser._id;
   
       if (!isReceiver && !isSender) return;
-      if(isReceiver){
-      setMessages((prevMessages) => [...prevMessages, data.message]);}
+      setIsReceiving(true);
+    try {
+        const encryptedAndSignedMessage = data.message.content;
+        const recipientPrivateKey = await getRecipentPrivateKey();
+        // console.log("recipientPrivateKey",recipientPrivateKey)
+  
+        // STEP 1 Load your privat key
+        console.log("dataa",data)
+        const privateKey = await openpgp.readPrivateKey({ armoredKey: recipientPrivateKey });
+        console.log("privateKey", privateKey)
+        if(privateKey.isDecrypted && !privateKey.isDecrypted()){
+          await privateKey.decrypt("");
+        }
+        // STEP 2 Load the encryptedmesages
+        const message = await openpgp.readMessage({
+          armoredMessage: encryptedAndSignedMessage,
+        });
+        console.log("message", message)
+        // STEP 3 load the sender public key
+        if(idData[data.message.sender._id] === undefined){
+          const publicKey =  getPublicKey({
+            subdomain: institution,
+            role: role,
+            userId: data.message.sender._id,
+          }).unwrap();
+          console.log("publicKey", publicKey)
+          dispatch(setPublicKey({
+            _id: data.message.sender._id,
+            publicKey: publicKey,
+          }))
+        }
+  
+        const senderPublicKeyArmored = idData[data.message.sender._id];
+        console.log("senderPublicKeyArmored", senderPublicKeyArmored)
+        const senderPublicKey = await openpgp.readKey({ armoredKey: senderPublicKeyArmored });
+        console.log("senderPublicKey", senderPublicKey)
+        // STEP 4 Decrypt the message and verify
+        // console.log("encryptedAndSignedMessage", encryptedAndSignedMessage)
+        const { data: decryptedText, signatures } = await openpgp.decrypt({
+          message : await openpgp.readMessage({ armoredMessage: encryptedAndSignedMessage }),
+          decryptionKeys: privateKey,
+          verificationKeys: senderPublicKey,
+        });
+        console.log("signatures", signatures)
+        console.log("decryptedText", decryptedText)
+  
+        const {verified,keyID} = signatures[0];
+        console.log("verified", verified)
+  
+        try {
+          await verified;
+          console.log("✅ Signature is valid. Signed by key ID:", keyID.toHex());
+        } catch (error) {
+          console.error("❌ Signature verification failed:", error);
+          toast.error("Signature verification failed");
+          return;
+        }
+          console.log("decryptedTextnnnnnnnnnnnnnnnnnnn", decryptedText)
+        const newData = {
+         chatId: data.chatId,
+         message: {
+          content: decryptedText,
+          sender: {
+            _id: data.message.sender._id,
+            name: data.message.sender.name,
+            avatar: data.message.sender.avatar,
+            role: data.message.sender.role,
+          },
+          chat: data.message.chat,
+          createdAt: data.message.createdAt,
+          attachments: data.message.attachments || [],
+          receiver: data.message.receiver,
+        }
+        }
+        console.log("newData", newData)
+        if(isReceiver){
+        setMessages((prevMessages) => [...prevMessages, newData.message]);}
+    } catch (error) {
+        console.error("Error decrypting message", error);
+        // toast.error("Error decrypting message");
+      }
+      finally {
+        setIsReceiving(false);
+      }
     },
     [id, currentUser._id]
   );
@@ -259,8 +363,12 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
 
   useEffect(() => {
     if (!containerRef.current) return;
-    containerRef.current.scrollTop = containerRef.current.scrollHeight;
-  }, [messages, oldMessages]);
+   setTimeout(() => {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+    , 1);
+  }, [containerRef, messages]);
+
 
   // if(oldMessageLoading){
   //   return (
@@ -288,22 +396,119 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
   //   toast.error(oldMessageChunk.message)
   //   return null
   // }
-  
-  
-  const allMessages = useMemo(() => [...oldMessages, ...messages], [oldMessages, messages]);
-  // console.log("allMessages",allMessages)
+
+  const decryptoldmessage = async(oldMessages) => {
+    if(!oldMessages) return "";
+    if(oldMessages.length === 0) return "";
+    console.log("oldMessages", oldMessages)
+    const privateKeyArmored = await getKey("privateKey");
+    console.log("privateKeyArmored", privateKeyArmored)
+    const privateKey = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored });
+    console.log("privateKey", privateKey)
+
+    if(privateKey.isDecrypted && !privateKey.isDecrypted()){
+      await privateKey.decrypt("");
+    }
+
+    const decrypted = [];
+
+    for(const msg of oldMessages){
+      // console.log("msg", msg)
+      try {
+        const senderId= msg.sender._id;
+        let senderPublicKeyArmored = idData[senderId];
+        // console.log("senderPublicKeyArmored", senderPublicKeyArmored)
+        if(!senderPublicKeyArmored){
+          senderPublicKeyArmored =  getPublicKey({
+            subdomain: institution,
+            role: role,
+            userId: senderId,
+          }).unwrap();
+
+          // console.log("senderPublicKeyArmored", senderPublicKeyArmored)
+
+          dispatch(setPublicKey({
+            _id: senderId,
+            publicKey: senderPublicKeyArmored,
+          }))
+        }
+        const senderPublicKey = await openpgp.readKey({armoredKey: senderPublicKeyArmored});
+        // console.log("senderPublicKey", senderPublicKey)
+
+        const { data: decryptedText, signatures } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: msg.content }),
+          decryptionKeys: privateKey,
+          verificationKeys: senderPublicKey,
+        });
+        console.log("decryptedText", decryptedText)
+        console.log("signatures", signatures)
+        await signatures[0].verified;
+
+        decrypted.push({
+          ...msg,
+          content: decryptedText,
+        })
+       
+      } catch (error) {
+        // toast.error("Error decrypting message");
+        console.error("Error decrypting message", error);
+      }
+    }
+    console.log("decryptedText", decrypted)
+    return decrypted;
+  }
+    // console.log("olmessagchunf",oldMessageChunk)
+   console.log("oldMessages", oldMessages) 
+  // let newmessages = []
+  // newmessages =await decryptoldmessage(oldMessages)
+  // console.log("newmessages", newmessages)
+  useEffect(() => {
+    const fetchDecryptedMessages = async () => {
+      const meesageeeec = await decryptoldmessage(oldMessages);
+      console.log("meesageeeec", meesageeeec);
+
+      setAllMessages([...(meesageeeec || []),...(messages || [])]);
+    };
+
+    fetchDecryptedMessages();
+  }, [oldMessages, messages]);
+
+  const [allMessages, setAllMessages] = useState([]);
+  // const allMessages = useMemo(async() => {
+  //   const decryptedMessages =await decryptoldmessage(oldMessages);
+  //   console.log("decryptedMessages", decryptedMessages)
+  //   return [...decryptedMessages, ...messages];
+  // }, [oldMessages, messages]);
+  console.log("allMessages",allMessages)
 
   const sendMessageHandler = async(event) => {
     event.preventDefault()
     // console.log("sendMessageHandler",message)
     if(!message) return;
-
+    setIsSending(true);
     const memebers = chatData?.data?.members;
-    // console.log("memebers", memebers)
+    const privateKey = await getKey("privateKey");
+    console.log("message",message)
+    // console.log("privateKey", privateKey)
+    //  console.log("memebers", memebers)
     // const filteredMembers = memebers.filter((member) => member._id !== currentUser._id);
     // console.log("filteredMembers", filteredMembers)
     const encryptedMessage = [];
     for(const memeber of memebers){
+      // console.log("memeber", memeber)
+      dispatch(setPublicKey(
+        {
+          _id: memeber._id,
+          publicKey: memeber.publicKey,
+        }
+      ))
+      // console.log("messagessss",message)
+      // if (member._id.toString() === currentuser.user._id) continue;
+      const passphrase = ""; // Replace with the passphrase if your private key is encrypted
+      const signedMessage = await encryptAndSign(message,memeber.publicKey,privateKey,passphrase)
+      // console.log("signedMessage", signedMessage)
+      // console.log("message", message)
+      
       encryptedMessage.push({
         to: memeber._id,
         from: {
@@ -312,7 +517,7 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
           avatar: currentUser.avatar,
           role: currentUser.role,
         },
-        encryptedMessage: message,
+        encryptedMessage: signedMessage,
         chatId: id,
     }
       )
@@ -320,11 +525,17 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
 
     if(!message) return;
 
-    //  console.log("encryptedMessage", encryptedMessage)
+    // console.log("encryptedMessage", encryptedMessage)
     socket.emit('NEW_GROUP_MESSAGE',{
       messages:encryptedMessage,
   })
+  setTimeout(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, 300);
   setMessage("")
+  setIsSending(false);
   }
 
   const messageOnChangle = (e) => {
@@ -398,11 +609,25 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
     // });
     // console.log("res",res)
     const memebers = chatData?.data?.members;
+    const privateKey = await getKey("privateKey");
+    console.log("privateKeyssssss", privateKey)
+ 
     // console.log("memebers", memebers)
     for(const memeber of memebers){
+      dispatch(setPublicKey(
+        {
+          _id: memeber._id,
+          publicKey: memeber.publicKey,
+        }
+      ))
+      // console.log("messagessss",message)
+      // if (member._id.toString() === currentuser.user._id) continue;
+      const passphrase = ""; // Replace with the passphrase if your private key is encrypted
+      console.log("messafed",message)
+      const signedMessage = await encryptAndSign(fileMessage,memeber.publicKey,privateKey,passphrase)
       const formData = new FormData();
      formData.append("attachments", filePreview.file);
-    formData.append("content", fileMessage||"");
+    formData.append("content", signedMessage||"");
     formData.append("chatId", id)
     formData.append("receiver", memeber._id)
 
@@ -480,6 +705,7 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
     <Fragment>
       {isChatSelected ? (
       <>
+      
       {oldMessagesLoading?
       <div>Loading...</div>
        :<Stack
@@ -497,15 +723,27 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
         {oldMessagesLoading || oldMessageLoading? (
           <div>Loading...</div>
         ) : (
-          allMessages.length === 0 ? (
+          allMessages.flat().length === 0 ? (
             <div>No messages yet</div>
           ) : (
             // console.log("allMessages", allMessages)
             <>
-            {allMessages.map((message) => (
+            {allMessages.flat().map((message) => (
               <MessageCompopnent key={message._id} message={message} />
             ))}
-            {/* <div ref={bottomRef} style={{ height: "1px" }}></div> */}
+    <div ref={bottomRef} style={{ height: "1px" }}></div>
+            {isSending && (
+  <div className={`message-bubble outgoing`}>
+    <Loader className="animate-spin text-blue-600" size={24} />
+    <span className="ml-2">Sending...</span>
+  </div>
+)}
+{isReceiving && (
+  <div className={`message-bubble incoming`}>
+    <Loader className="animate-spin text-blue-600" size={24} />
+    <span className="ml-2">Receiving...</span>
+  </div>
+)}
           </>
           
         )
@@ -631,6 +869,7 @@ const isInputDisabled = chatData?.data?.sendmessageallowed === false && !isAdmin
 const Adminchat = () => {
   const socket = useSocket()
   const [onlineUsers, setOnlineUsers] = useState([])
+  
   // console.log("onlineUsers", onlineUsers)
     // console.log("sdddocket", socket)
   const AlertData = useSelector((state) => state.chat)
@@ -642,6 +881,7 @@ const Adminchat = () => {
     subdomain: institution,
     role: role,
   })
+
   //  console.log("data", data)
   const isBoolRef = useRef(true);
   useEffect(() => {
@@ -705,8 +945,8 @@ const Adminchat = () => {
   // }
 
   return (
-   <Box className="h-screen w-screen flex" >
-  <Grid container sx={{ height: "100%" }}>
+   <Box className="h-screen flex" >
+  <Grid container sx={{width:"100%", height: "100%" }}>
 
     <Grid item sx={{ width: 80, backgroundColor: "#0e1c2f" }}>
       <Leftbar />
@@ -717,6 +957,7 @@ const Adminchat = () => {
             item
             sm={4}
             md={3}
+            lg={2}
             sx={{
               display: { xs: "none", sm: "block" },
               bgcolor: "#f5f5f5",
@@ -757,6 +998,7 @@ const Adminchat = () => {
             xs={12}
             sm={8}
             md={9}
+            lg={10}
             sx={{
               bgcolor: "#ffffff",
               display: "flex",

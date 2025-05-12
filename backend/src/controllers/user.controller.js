@@ -10,6 +10,7 @@ import { publicKeyCheck, userLoginSchema, userPasswordUpdateSchema, userSignupSc
 import { generateAccessTokenofUser } from "../helpers/jwt.js"
 import { Chat } from "../models/chat.model.js"
 
+
 const generateToken = async(userId) => {
   try {
     const userExisted = await User.findById(userId);
@@ -29,7 +30,7 @@ const generateToken = async(userId) => {
     })
 
     // console.log("institutetoken", institutetoken)
-    console.log("userToken", userToken)
+    // console.log("userToken", userToken)
 
     return userToken;
   } catch (error) {
@@ -62,6 +63,7 @@ const userSignup = asynhandler(async (req, res) => {
         parentofemail,
         parentofname,
         avatar,
+        
       } = parseData.data
   
       // Validate subdomain
@@ -131,7 +133,7 @@ const userSignup = asynhandler(async (req, res) => {
         
         
       }
-      console.log("instituteData", instituteData)
+      // console.log("instituteData", instituteData)
       const userData = new User({
         name,
         email,
@@ -174,7 +176,7 @@ const userSignup = asynhandler(async (req, res) => {
 
 const loginUser = asynhandler(async (req, res) => {
   try {
-    console.log(req.body);
+    // console.log(req.body);
     const parseData = userLoginSchema.safeParse(req.body);
     if (!parseData.success) {
       return res.json(
@@ -202,7 +204,7 @@ const loginUser = asynhandler(async (req, res) => {
     }
 
     const token =await generateToken(user._id);
-    console.log("token", token);
+    // console.log("token", token);
 
     const options = {
       httpOnly: true,
@@ -229,7 +231,7 @@ const loginUser = asynhandler(async (req, res) => {
 
 const updatePublicKey = asynhandler(async(req,res) => {
   try {
-     console.log("updatePublicKey",req.body)
+    //  console.log("updatePublicKey",req.body)
      const parseData = publicKeyCheck.safeParse(req.body)
      if (!parseData.success) {
         console.log("Validation error:", parseData.error.format?.())
@@ -264,7 +266,7 @@ const updatePublicKey = asynhandler(async(req,res) => {
 
 const updateUserPasssword = asynhandler(async(req,res) => {
   try {
-    console.log("updateUserPasssword",req.body)
+    // console.log("updateUserPasssword",req.body)
     const parseData =  userPasswordUpdateSchema.safeParse(req.body)
     if (!parseData.success) {
         console.log("Validation error:", parseData.error.format?.())
@@ -295,7 +297,7 @@ const updateUserPasssword = asynhandler(async(req,res) => {
 
 const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
   try {
-    console.log("getAllUsersBasedOnRole", req.user);
+    // console.log("getAllUsersBasedOnRole", req.user);
 
     if (!req.user) {
       return res.json(new apiresponse(401, null, "Unauthorized Access"));
@@ -314,7 +316,7 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
     const allUsers = await User.find({
       _id: { $ne: _id },
       "institution._id": institution._id,
-    }).select("_id name role email avatar");
+    }).select("_id name role email avatar publicKey");
 
     // 2. Get all *non-group* chats where the current user is a member
     const userChats = await Chat.find({
@@ -334,6 +336,8 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
 
     // 4. Role-based filtering
     allUsers.forEach((user) => {
+      // console.log("User:", user);
+      if(user.publicKey != null){
       const userId = user._id.toString();
       if (chattingWithUserIds.has(userId)) return;
 
@@ -352,6 +356,7 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
       if (role === "student" && ["teacher", "student"].includes(user.role)) {
         data[user.role + "s"]?.push(user);
       }
+    }
     });
 
     if (
@@ -362,6 +367,8 @@ const getAllUsersBasedOnRole = asynhandler(async (req, res) => {
     ) {
       return res.json(new apiresponse(404, data, "No users found"));
     }
+
+    // console.log("Filtered Users:", data);
 
     return res.json(
       new apiresponse(200, data, "Available users to start new chat")
@@ -383,7 +390,8 @@ const getUserForGroups = asynhandler(async (req, res) => {
     // Base filter: exclude self and match institution
     let filter = {
       _id: { $ne: _id },
-      "institution._id": institution._id
+      "institution._id": institution._id,
+      publicKey: { $ne: null }
     };
 
     // Role-based filtering logic
@@ -394,9 +402,9 @@ const getUserForGroups = asynhandler(async (req, res) => {
     }
     // Admin can see all, so no role filter
 
-    console.log("Group User Filter:", filter);
+    // console.log("Group User Filter:", filter);
 
-    const users = await User.find(filter).select("_id name role email avatar");
+    const users = await User.find(filter).select("_id name role email avatar publicKey");
 
     if (!users || users.length === 0) {
       return res.json(new apiresponse(404, null, "No users found"));
@@ -439,13 +447,13 @@ const getUserProfile = asynhandler(async (req, res) => {
 })
 
 const updateUserProfile = asynhandler(async(req,res) => {
-  console.log("HIT: updateUserProfile controller");
+  // console.log("HIT: updateUserProfile controller");
   if(!req.user){
     return res.json(new apiresponse(401, null, "login to your account"));
   }
  try {
    const { _id,role ,institution} = req.user;
-   console.log("updateUserProfile",req.body)
+  //  console.log("updateUserProfile",req.body)
    const {name,avatar} = req.body;
    const data = await User.findById(
      _id,
@@ -494,6 +502,28 @@ const updateUserProfile = asynhandler(async(req,res) => {
 
 })
 
+const getPublicKey = asynhandler(async(req,res) => {
+  const {userId} = req.body;
+  console.log("getPublicKey",userId)
+  if(!userId){
+    return res.json(new apiresponse(400, null, "User ID is required"));
+  }
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json(new apiresponse(404, null, "User not found"));
+    }
+    if (!user.publicKey) {
+      return res.json(new apiresponse(404, null, "Public key not found"));
+    }
+    console.log("Public key:", user.publicKey);
+    return res.json(new apiresponse(200, user.publicKey, "Public key fetched successfully"));
+  } catch (error) {
+    console.error(error);
+    return res.json(new apiresponse(500, null, "Failed to fetch public key"));
+  }
+})
+
 export {
     userSignup,
     loginUser,
@@ -502,5 +532,6 @@ export {
     getAllUsersBasedOnRole,
     getUserForGroups,
     getUserProfile,
-    updateUserProfile
+    updateUserProfile,
+    getPublicKey
 }

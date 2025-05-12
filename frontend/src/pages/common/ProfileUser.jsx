@@ -48,7 +48,9 @@ const ProfileUser = () => {
   // }
 
   if (isError || !data?.data) {
-    toast.error(data?.message || 'Failed to fetch profile data');
+    
+    if(data) {
+    toast.error(data?.message);}
     return (
       <div className="flex justify-center items-center h-screen text-red-500 bg-gray-50">
         Failed to load profile.

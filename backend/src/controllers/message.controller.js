@@ -15,8 +15,7 @@ export const detectFileType = (mimetype) => {
     )
       return "doc";
     return "other";
-  };
-  
+};  
 const sendMessageController = asynhandler(async (req, res) => {
     const { content, chatId,receiver } = req.body;
     // console.log("req.body", req.body);
@@ -159,9 +158,8 @@ const getIndividualMessageController = asynhandler(async (req, res) => {
       .skip(skip)
       .limit(resultPerPage)
       .populate("sender", "name avatar role")
-      .populate("receiver", "name avatar role")
       .lean(),
-    Message.countDocuments({
+       Message.countDocuments({
       chat: chatId,
       receiver: user._id,
     }),

@@ -75,11 +75,12 @@ export default function NewGroupDialog({refetch, open, onClose }) {
           chatId:"",
           name:groupData.groupName
         }))
-    const members = groupData.selectedUsers.map((user) => ({
+    const members = groupData.selectedUsers.map((user) => ( {
       _id: user._id,
       role: user.role,
       name: user.name,
       avatar: user.avatar,
+      publicKey: user.publicKey,
     }));
     // const image = groupData.groupImage || null;
     const data={
@@ -93,7 +94,7 @@ export default function NewGroupDialog({refetch, open, onClose }) {
         sendmessageallowed: groupData.allowSendMessages,
         avatar: groupData.groupImage || null,
     }
-    // console.log("data", data)
+    //  console.log("data", data)
     createGroupChat(data)
     .unwrap()
     .then((response) => {
