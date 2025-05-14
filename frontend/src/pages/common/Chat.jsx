@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState ,useMemo, Fragment} from "react"
 import { Box,Stack,Avatar,Typography, IconButton, Menu, MenuItem, Dialog, DialogTitle,Button, DialogContent, TextField, DialogActions } from "@mui/material"
-import { useGetChatDetailQuery, useGetMessagesQuery, useGetPublicKeyQuery, useSendAttachmentsMutation } from "../../store/api/api.js"
+import { useGetChatDetailQuery, useGetMessagesQuery, useSendAttachmentsMutation } from "../../store/api/api.js"
 import toast from "react-hot-toast"
 import { useSelector,useDispatch } from "react-redux"
 import { useParams } from "react-router-dom"
@@ -235,7 +235,7 @@ const [isReceiving, setIsReceiving] = useState(false);
     try {
         const encryptedAndSignedMessage = data.message.content;
         const recipientPrivateKey = await getRecipentPrivateKey();
-        // console.log("recipientPrivateKey",recipientPrivateKey)
+         console.log("recipientPrivateKey",recipientPrivateKey)
   
         // STEP 1 Load your privat key
         console.log("dataa",data)
@@ -404,10 +404,10 @@ const [isReceiving, setIsReceiving] = useState(false);
       try {
         
         let senderPublicKeyArmored = msg.sender.publicKey;
-        // console.log("senderPublicKeyArmored", senderPublicKeyArmored)
+         console.log("senderPublicKeyArmored........", senderPublicKeyArmored)
        
         const senderPublicKey = await openpgp.readKey({armoredKey: senderPublicKeyArmored});
-        // console.log("senderPublicKey", senderPublicKey)
+         console.log("senderPublicKey", senderPublicKey)
 
         const { data: decryptedText, signatures } = await openpgp.decrypt({
           message: await openpgp.readMessage({ armoredMessage: msg.content }),
@@ -457,24 +457,25 @@ const [isReceiving, setIsReceiving] = useState(false);
 
   const sendMessageHandler = async(event) => {
     event.preventDefault()
-     console.log("sendMessageHandler",message)
+    //  console.log("sendMessageHandler",message)
     if(!message) return;
     setIsSending(true);
     const memebers = chatData?.data?.members;
     const privateKey = await getKey("privateKey");
-    console.log("message",message)
-    // console.log("privateKey", privateKey)
+    // console.log("message",message)
+    //  console.log("privateKey", privateKey)
     //  console.log("memebers", memebers)
     // const filteredMembers = memebers.filter((member) => member._id !== currentUser._id);
     // console.log("filteredMembers", filteredMembers)
     const encryptedMessage = [];
     for(const memeber of memebers){
-       console.log("memeber", memeber)
+      //  console.log("memeber", memeber)
       // console.log("messagessss",message)
       // if (member._id.toString() === currentuser.user._id) continue;
       const passphrase = ""; // Replace with the passphrase if your private key is encrypted
+      console.log(memeber.publicKey)
       const signedMessage = await encryptAndSign(message,memeber.publicKey,privateKey,passphrase)
-      // console.log("signedMessage", signedMessage)
+      //  console.log("signedMessage", signedMessage)
       // console.log("message", message)
       // console.log("cyruunueneneeeeeee",currentUser)
       encryptedMessage.push({
@@ -488,6 +489,7 @@ const [isReceiving, setIsReceiving] = useState(false);
         },
         encryptedMessage: signedMessage,
         chatId: id,
+        institution:chatData.data.institution,
     }
       )
     }
@@ -495,7 +497,7 @@ const [isReceiving, setIsReceiving] = useState(false);
 
     if(!message) return;
 
-    // console.log("encryptedMessage", encryptedMessage)
+     console.log("encryptedMessage", encryptedMessage)
     socket.emit('NEW_GROUP_MESSAGE',{
       messages:encryptedMessage,
   })

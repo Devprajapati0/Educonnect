@@ -5,6 +5,8 @@ import { createGroupSchema, updatechatSchema } from "../schemas/chat.schema.js"
 import { Chat } from "../models/chat.model.js"
 import { uploadOnCloudinary } from "../helpers/cloudinary.js"
 import mongoose from "mongoose"
+import { parse } from "path"
+
 
 
 const createGroupChat = asynhandler(async (req, res) => {
@@ -25,7 +27,7 @@ const createGroupChat = asynhandler(async (req, res) => {
             new apiresponse(400, null, "Invalid request data", errorMessage)
         )
     }
-    const { name, description, members, addmembersallowed,subdomain, sendmessageallowed ,groupchat} = pareseData.data
+    const { name, description, members, addmembersallowed,subdomain, sendmessageallowed ,groupchat,avatar} = pareseData.data
     
    
     //  console.log("userExisted", userExisted)
@@ -38,18 +40,16 @@ const createGroupChat = asynhandler(async (req, res) => {
       )
     }
     //  console.log("institution", institution)
-    let image=null;
-    if(req.file){
-      const url = await uploadOnCloudinary(req.file.path);
-      console.log("url", url)
-      if (!url) {
-        return res.json(
-          new apiresponse(400, null, "Error uploading image")
-        )
+    let image = null;
+    if(avatar){
+      const uploadResult = await uploadOnCloudinary(avatar);
+      if (!uploadResult) {
+        return res.status(400).json(new apiresponse(400, null, "Error uploading image"))
       }
-      image = url.url;
+      image = uploadResult.url;
+      
+      
     }
-    console.log("req.file", req.file)
     console.log("image", image)
 
     const allmembers=[...members, {_id,role,name:req.user.name,avatar:req.user.avatar,publicKey:req.user.publicKey}]
@@ -81,7 +81,7 @@ const createGroupChat = asynhandler(async (req, res) => {
     }
 
     return  res.json(
-        new apiresponse(200, chat, "Group chat created successfully")
+        new apiresponse(200, chat,  `${groupchat ? "Group" : "Private"} chat created successfully`)
     )   
 
 
@@ -174,6 +174,7 @@ const getMyChats = asynhandler(async (req, res) => {
     return res.json(new apiresponse(500, null, "Internal Server Error"));
   }
 });
+
 const deleteChat = asynhandler(async (req, res) => {
   try {
     if (!req.user) {
@@ -211,7 +212,6 @@ const deleteChat = asynhandler(async (req, res) => {
     return res.json(new apiresponse(500, null, "Internal Server Error"));
   }
 });
-
 // const getChatForGroup = asynhandler(async (req, res) => {
 const getChatDetails = asynhandler(async(req,res) => {
   try {
@@ -307,6 +307,7 @@ const updateChatDetail = asynhandler(async (req, res) => {
     return res.json(new apiresponse(500, null, "Internal Server Error"));
   }
 });
+
 const exitGroup = asynhandler(async (req, res) => {
   try {
     if (!req.user) {
@@ -367,4 +368,142 @@ const exitGroup = asynhandler(async (req, res) => {
   }
 });
 
-export { createGroupChat,getMyChats,getChatDetails,updateChatDetail,exitGroup,deleteChat }
+const getAllChatsOfAllUsers = asynhandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Unauthorized Access"));
+    }
+
+    const { role } = req.user;
+    
+
+    if (role !== "admin") {
+      return res.json(new apiresponse(403, null, "Only admins can access all chats"));
+    }
+
+    const allChats = await Chat.find({
+      institution: req.user.institution._id,
+    })
+      .populate("members._id", "name avatar publicKey role")
+      .populate("institution", "name subdomain")
+      .lean();
+
+      console.log("allChats", allChats);
+
+    if (!allChats || allChats.length === 0) {
+      return res.json(new apiresponse(404, null, "No chats found"));
+    }
+
+    const data = {
+      chats: [],
+      groups: [],
+    };
+
+    for (const chat of allChats) {
+      if (chat.groupchat) {
+        data.groups.push(chat);
+      } else {
+        data.chats.push(chat);
+      }
+    }
+
+    return res.json(new apiresponse(200, data, "All chats fetched successfully"));
+  } catch (error) {
+    console.error("getAllChatsOfAllUsers error:", error);
+    return res.json(new apiresponse(500, null, "Internal Server Error"));
+  }
+});
+
+const deleteanyChatForAdmin = asynhandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Unauthorized Access"));
+    }
+
+    const { chatId } = req.body;
+
+    // Check if chatId exists and is a valid ObjectId
+    if (!chatId || chatId === "undefined") {
+      return res.json(new apiresponse(400, null, "Chat ID is required"));
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.json(new apiresponse(400, null, "Invalid Chat ID format"));
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.json(new apiresponse(404, null, "Chat not found"));
+    }
+
+    await Chat.findByIdAndDelete(chatId);
+    return res.json(new apiresponse(200, null, "Chat deleted successfully"));
+  } catch (error) {
+    console.error("Delete Chat Error:", error);
+    return res.json(new apiresponse(500, null, "Internal Server Error"));
+  }
+}
+);
+
+const removeMemeberFromGroupChat = asynhandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Unauthorized Access"));
+    }
+
+    const { chatId, memberId } = req.body;
+
+    if (!chatId || chatId === "undefined") {
+      return res.json(new apiresponse(400, null, "Chat ID is required"));
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.json(new apiresponse(400, null, "Invalid Chat ID format"));
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.json(new apiresponse(404, null, "Chat not found"));
+    }
+
+    const userIndex = chat.members.findIndex(
+      (member) => member._id.toString() === memberId.toString()
+    );
+
+    if (userIndex === -1) {
+      return res.json(new apiresponse(403, null, "User not found in this chat"));
+    }
+
+    const isAdmin = chat.isAdmin?.includes(memberId);
+
+    if (isAdmin) {
+      // Check if they are the only admin
+      if (chat.isAdmin.length === 1) {
+        return res.json(
+          new apiresponse(
+            403,
+            null,
+            "Cannot remove the only admin from this group chat"
+          )
+        );
+      }
+
+      // Remove from isAdmin array too
+      chat.isAdmin = chat.isAdmin.filter(
+        (adminId) => adminId.toString() !== memberId.toString()
+      );
+    }
+
+    // Remove from members array
+    chat.members.splice(userIndex, 1);
+    await chat.save();
+
+    return res.json(new apiresponse(200, null, "Member removed successfully"));
+  } catch (error) {
+    console.error("Remove Member Error:", error);
+    return res.json(new apiresponse(500, null, "Internal Server Error"));
+  }
+});
+
+
+export { createGroupChat,getMyChats,getChatDetails,updateChatDetail,exitGroup,deleteChat,deleteanyChatForAdmin ,getAllChatsOfAllUsers,removeMemeberFromGroupChat}

@@ -84,6 +84,7 @@ io.on("connection", (socket) => {
           receiver: msg.to,
         };
         const messageForDB = {
+          institution: msg.institution,
           sender: msg.from,
           chat: msg.chatId,
           content: msg.encryptedMessage,

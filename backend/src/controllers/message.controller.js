@@ -73,6 +73,7 @@ const sendMessageController = asynhandler(async (req, res) => {
     
     // 3. 💬 Create and store message
      await Message.create({
+      institution: chat.institution,
       sender: {
         _id: senderId,
       },

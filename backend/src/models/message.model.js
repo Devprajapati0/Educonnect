@@ -15,6 +15,11 @@ const AttachmentSchema = new Schema({
 
 const messageSchema = new Schema(
     {
+      institution:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Institution",
+        required: true,
+      },
       sender: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

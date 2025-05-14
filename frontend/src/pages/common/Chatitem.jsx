@@ -21,13 +21,13 @@ const ChatItem = React.memo(function ChatItem({
   role,
   subdomain,
   newMessageAlert,
-  onClick, // NEW
+  // onClick, // NEW
   isOnline,
   groupchat
 }) {
   // console.log("isOnline",isOnline)
   // console.log("alert",newMessageAlert)
-  
+  console.log("avatar",avatar)
   const theme = useTheme();
    const dispatch = useDispatch();
     const handleClick = () => {

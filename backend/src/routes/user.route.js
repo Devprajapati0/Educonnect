@@ -1,6 +1,6 @@
 import {Router} from 'express';
-import {userSignup,loginUser,updatePublicKey, updateUserPasssword,updateUserProfile,getUserProfile, getAllUsersBasedOnRole,getUserForGroups,getPublicKey} from '../controllers/user.controller.js';
-import {createGroupChat,getChatDetails,updateChatDetail,getMyChats,exitGroup,deleteChat} from '../controllers/chat.controller.js';
+import {userSignup,loginUser,updatePublicKey, updateUserPasssword,updateUserProfile,getUserProfile, getAllUsersBasedOnRole,getUserForGroups,getPublicKey,getAllUsersForAdmin,deleteUser,getDashboardStats} from '../controllers/user.controller.js';
+import {createGroupChat,getChatDetails,updateChatDetail,getMyChats,exitGroup,deleteChat,deleteanyChatForAdmin,getAllChatsOfAllUsers,removeMemeberFromGroupChat} from '../controllers/chat.controller.js';
 import { getIndividualMessageController,getChatMediaController} from '../controllers/message.controller.js';
 import { upload } from '../middlewares/multer.middleware.js';
 import userAuthenticator from '../middlewares/jwt.middleware.js';
@@ -16,6 +16,9 @@ router.route('/get-user-for-group').get(userAuthenticator,getUserForGroups);
 router.route('/get-user-profile').get(userAuthenticator,getUserProfile);
 router.route('/update-user-profile').post(userAuthenticator,updateUserProfile);
 router.route('/get-public-key').post(userAuthenticator,getPublicKey);
+router.route('/get-all-users-for-admin').get(userAuthenticator,getAllUsersForAdmin);
+router.route('/delete-user').post(userAuthenticator,deleteUser);
+router.route('/get-dashboard-stats').get(userAuthenticator,getDashboardStats);
 
 
 //chat
@@ -25,9 +28,15 @@ router.route('/getchat/:chatId').get(userAuthenticator,getChatDetails)
 router.route('/update-chat').post(userAuthenticator,updateChatDetail);
 router.route('/exit-group').post(userAuthenticator,exitGroup);
 router.route('/delete-chat').post(userAuthenticator,deleteChat);
+router.route('/delete-any-chat').post(userAuthenticator,deleteanyChatForAdmin);
+router.route('/get-all-chats-of-all-users').get(userAuthenticator,getAllChatsOfAllUsers);
+router.route('/remove-member').post(userAuthenticator,removeMemeberFromGroupChat);
+
 
 //message
 router.route('/get-all-messages/:chatId').get(userAuthenticator,getIndividualMessageController);
 router.route('/get-chat-media').post(userAuthenticator,getChatMediaController);
+
+
 
 export default router;

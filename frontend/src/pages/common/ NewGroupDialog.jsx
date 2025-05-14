@@ -45,6 +45,7 @@ export default function NewGroupDialog({refetch, open, onClose }) {
   );
 
   const contacts = data?.data || [];
+  console.log("contacts", contacts);
 
   const filteredContacts = contacts.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase())
@@ -69,7 +70,7 @@ export default function NewGroupDialog({refetch, open, onClose }) {
   const handleNext = () => setNextStep(true);
   const handleBack = () => setNextStep(false);
   const handleCreate = async(groupData) => {
-    // console.log("Group data:", groupData);
+     console.log("Group data:", groupData);
      dispatch(setAvatar({
           image:groupData.groupImage,
           chatId:"",
@@ -94,16 +95,16 @@ export default function NewGroupDialog({refetch, open, onClose }) {
         sendmessageallowed: groupData.allowSendMessages,
         avatar: groupData.groupImage || null,
     }
-    //  console.log("data", data)
+     console.log("data", data)
     createGroupChat(data)
     .unwrap()
     .then((response) => {
-      // console.log("Chat created successfully:", response);
+      console.log("Chat created successfully:", response);
       if(response.success == false){
         return toast.error(response.message);
       }
       toast.success(response.message);
-    //   setFlag(!flag);
+      // setFlag(!flag);
     })
     .catch((error) => {
       console.error("Error creating chat:", error);

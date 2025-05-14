@@ -22,6 +22,10 @@ export const getKey = async (keyName) => {
   const db = await initDB();
   return db.get(STORE_NAME, keyName);
 };
+export const deleteKey = async (keyName) => {
+  const db = await initDB();
+  await db.delete(STORE_NAME, keyName);
+};
 
 export const generateKeyPair = async () => {
   try {

@@ -9,6 +9,7 @@ import { uploadOnCloudinary } from "../helpers/cloudinary.js"
 import { publicKeyCheck, userLoginSchema, userPasswordUpdateSchema, userSignupSchema } from "../schemas/user.schema.js"
 import { generateAccessTokenofUser } from "../helpers/jwt.js"
 import { Chat } from "../models/chat.model.js"
+import { Message } from "../models/message.model.js"
 
 
 const generateToken = async(userId) => {
@@ -532,7 +533,271 @@ const getPublicKey = asynhandler(async(req,res) => {
   }
 })
 
+const getAllUsersForAdmin = asynhandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Login to your account"));
+    }
 
+    const { _id, role, institution } = req.user;
+
+    // Only admin can access this
+    if (role !== "admin") {
+      return res.json(new apiresponse(403, null, "Forbidden"));
+    }
+
+    // Fetch all users from the same institution except the current user
+    const users = await User.find({
+      _id: { $ne: _id },
+      "institution._id": institution._id,
+    }).select("_id name role email avatar publicKey");
+
+    if (!users || users.length === 0) {
+      return res.json(new apiresponse(404, null, "No users found"));
+    }
+
+    // Group users by role
+    const datatosend = {
+      students: [],
+      parents: [],
+      teachers: [],
+      admins: [],
+    };
+
+    users.forEach((user) => {
+      const role = user.role?.toLowerCase();
+      if (role === "student") datatosend.students.push(user);
+      else if (role === "parent") datatosend.parents.push(user);
+      else if (role === "teacher") datatosend.teachers.push(user);
+      else if (role === "admin") datatosend.admins.push(user);
+    });
+
+    return res.json(new apiresponse(200, datatosend, "Users grouped by role"));
+  } catch (error) {
+    console.error("getAllUsersForAdmin error:", error);
+    return res.json(new apiresponse(500, null, "Internal Server Error"));
+  }
+});
+const deleteUser = asynhandler(async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Unauthorized access"));
+    }
+
+    if (!userId) {
+      return res.json(new apiresponse(400, null, "User ID is required"));
+    }
+
+    const requester = req.user;
+
+    // Fetch the user to be deleted
+    const userToDelete = await User.findById(userId);
+    if (!userToDelete) {
+      return res.json(new apiresponse(404, null, "User not found"));
+    }
+
+    if (userToDelete.role === "admin") {
+      return res.json(new apiresponse(403, null, "Cannot delete admin user"));
+    }
+
+    // Institution check
+    if (
+      requester.role !== "admin" ||
+      userToDelete.institution._id.toString() !== requester.institution._id.toString()
+    ) {
+      return res.json(new apiresponse(403, null, "Forbidden: You can't delete this user"));
+    }
+
+    // Check for single-admin groups
+    const blockingChats = await Chat.aggregate([
+      {
+        $match: {
+          "members._id": userId,
+          groupchat: true,
+          institution: requester.institution._id,
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          isOnlyAdmin: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: [{ $size: "$isAdmin" }, 1] },
+                  { $eq: [{ $arrayElemAt: ["$isAdmin", 0] }, userId] },
+                ],
+              },
+              true,
+              false,
+            ],
+          },
+        },
+      },
+      {
+        $match: {
+          isOnlyAdmin: true,
+        },
+      },
+    ]);
+
+    if (blockingChats.length > 0) {
+      return res.json(
+        new apiresponse(
+          400,
+          blockingChats,
+          `Cannot delete user: They are the only admin in these group chats (${blockingChats
+            .map((chat) => chat.name)
+            .join(", ")})`
+        )
+      );
+    }
+
+    // Remove user from chats in the same institution
+    await Chat.updateMany(
+      {
+        "members._id": userId,
+        institution: requester.institution._id,
+        members: { $exists: true }, // ensure members array exists
+      },
+      {
+        $pull: {
+          members: { _id: userId },
+        },
+      }
+    );
+    
+    // Remove user from isAdmin
+    await Chat.updateMany(
+      {
+        isAdmin: { $exists: true, $type: "array" },
+        institution: requester.institution._id,
+      },
+      {
+        $pull: {
+          isAdmin: userId,
+        },
+      }
+    );
+
+    // ✅ Delete all messages where the user is the receiver
+    await Message.deleteMany({ receiver: userId });
+
+    // ✅ (Optional) Delete messages where the user is sender too
+    // await Message.deleteMany({ sender: userId });
+
+    // Delete the user
+    await User.deleteOne({ _id: userId });
+
+    // Clear token (if stored in cookie)
+    res
+      .json(new apiresponse(200, null, "User deleted and logged out"));
+  } catch (error) {
+    console.error("deleteUser error:", error);
+    return res.json(new apiresponse(500, null, "Failed to delete user"));
+  }
+});
+
+const getDashboardStats = asynhandler(async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json(new apiresponse(401, null, "Unauthorized access"));
+    }
+
+    const { role, institution } = req.user;
+
+    if (role !== "admin") {
+      return res.json(new apiresponse(403, null, "Forbidden"));
+    }
+
+    const institutionId = institution._id;
+
+    // Count totals in parallel
+    const [
+      totalUsers,
+      totalStudents,
+      totalTeachers,
+      totalParents,
+      totalAdmins,
+      totalGroups,
+      totalPrivateChats,
+      totalMessages,
+    ] = await Promise.all([
+      User.countDocuments({ "institution._id": institutionId }),
+      User.countDocuments({ "institution._id": institutionId, role: "student" }),
+      User.countDocuments({ "institution._id": institutionId, role: "teacher" }),
+      User.countDocuments({ "institution._id": institutionId, role: "parent" }),
+      User.countDocuments({ "institution._id": institutionId, role: "admin" }),
+      Chat.countDocuments({ "institution": institutionId, groupchat: true }),
+      Chat.countDocuments({ "institution": institutionId, groupchat: false }),
+      Message.countDocuments({ "institution": institutionId }),
+    ]);
+
+    // Prepare date ranges: start of today - 6 days to end of today
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    // Ensure the dates are in UTC
+    const startDate = new Date(sevenDaysAgo).toISOString();
+    const endDate = new Date(today).toISOString();
+
+    console.log("Start Date (Seven Days Ago):", startDate);
+    console.log("End Date (Today):", endDate);
+
+    const messages = await Message.find({
+      "institution": institutionId,
+      createdAt: { $gte: startDate, $lte: endDate },
+    }).select("createdAt");
+
+    console.log("Messages found in the last 7 days:", messages);
+
+    // Build daily counts for the last 7 days
+    const messagesLast7Days = new Array(7).fill(0);
+
+    messages.forEach((msg) => {
+      const created = new Date(msg.createdAt);
+      console.log("Created Date:", created);
+      const createdUTC = new Date(
+        Date.UTC(created.getFullYear(), created.getMonth(), created.getDate())
+      );
+
+      const diffDays = Math.floor((today - createdUTC) / (1000 * 60 * 60 * 24));
+      const index = 6 - diffDays;
+
+      console.log("Message Created At:", created);
+      console.log("Difference in Days:", diffDays);
+
+      if (index >= 0 && index < 7) {
+        messagesLast7Days[index]++;
+      }
+    });
+
+    console.log("Messages in last 7 days:", messagesLast7Days);
+
+    const stats = {
+      totalUsers,
+      totalStudents,
+      totalTeachers,
+      totalParents,
+      totalAdmins,
+      totalGroups,
+      totalPrivateChats,
+      totalMessages,
+      messagesLast7Days,
+    };
+
+    return res.json(new apiresponse(200, stats, "Dashboard stats fetched successfully"));
+  } catch (error) {
+    console.error("getDashboardStats error:", error);
+    return res.json(new apiresponse(500, null, "Failed to fetch dashboard stats"));
+  }
+});
 
 export {
     userSignup,
@@ -543,5 +808,8 @@ export {
     getUserForGroups,
     getUserProfile,
     updateUserProfile,
-    getPublicKey
+    getPublicKey,
+    getAllUsersForAdmin,
+    deleteUser,
+    getDashboardStats
 }

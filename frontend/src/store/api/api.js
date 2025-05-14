@@ -170,11 +170,60 @@ const api = createApi({
             headers: { 'Content-Type': 'application/json' },
           }),
         }),
+
+        getAllUsersforAdmin : builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-all-users-for-admin`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        deleteanyChatForAdmin : builder.mutation({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/delete-any-chat`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        deleteUser : builder.mutation({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/delete-user`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        getDashboardStats : builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-dashboard-stats`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        getAllChatsofAlluser: builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-all-chats-of-all-users`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+
+        removeMemberFromChat : builder.mutation({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/remove-member`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
       })
 })
 
 export const {useGetInstituteProfileQuery,useUpdateInstituteProfileMutation,useAddRoleSignupMutation,useUpdateUserPasswordMutation,useGetMyChatsQuery,useGetAllUsersBasedOnRoleQuery,
     useCreateGroupChatMutation,useGetUserForGroupsQuery,useGetMessagesQuery,useGetChatDetailQuery,useSendAttachmentsMutation,useGetUserProfileQuery,useUpdateUserProfileMutation,useUpDateChatDetailMutation
-,useGetChatMediaQuery,useExitGroupMutation,useGetPublicKeyQuery,useDeleteChatMutation
+,useGetChatMediaQuery,useExitGroupMutation,useGetPublicKeyQuery,useDeleteChatMutation,
+useGetAllUsersforAdminQuery,useDeleteanyChatForAdminMutation,useDeleteUserMutation,useGetDashboardStatsQuery,
+useGetAllChatsofAlluserQuery,useRemoveMemberFromChatMutation
 } = api
 export default api;

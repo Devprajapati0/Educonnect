@@ -17,22 +17,29 @@ export default function GroupDetailsStep({
   groupName,
   setGroupName,
 }) {
-  const [groupImage, setGroupImage] = useState(null);
+  const [groupImage, setGroupImage] = useState(null);         // for preview
+  const [groupImageFile, setGroupImageFile] = useState(null); // for backend
+
   const [allowAddMembers, setAllowAddMembers] = useState(true);
   const [allowSendMessages, setAllowSendMessages] = useState(true);
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setGroupImage(imageUrl);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setGroupImage(reader.result);   // preview URL
+        setGroupImageFile(file);        // actual file for backend
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleCreate = () => {
     onCreate({
       groupName,
-      groupImage,
+      groupImage,       // optional: preview
+      groupImageFile,   // send this to backend
       allowAddMembers,
       allowSendMessages,
       selectedUsers,
@@ -142,12 +149,12 @@ export default function GroupDetailsStep({
       {/* Members */}
       <Box>
         <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-          MEMBERS: 
+          MEMBERS:
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {selectedUsers.map((user) => (
             <Box
-              key={user.id}
+              key={user._id}
               sx={{
                 width: 60,
                 textAlign: 'center',
