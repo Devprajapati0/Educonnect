@@ -3,10 +3,10 @@ import { Box,Stack,Avatar,Typography, IconButton, Menu, MenuItem, Dialog, Dialog
 import { useGetChatDetailQuery, useGetMessagesQuery, useSendAttachmentsMutation } from "../../store/api/api.js"
 import toast from "react-hot-toast"
 import { useSelector,useDispatch } from "react-redux"
-import { useParams } from "react-router-dom"
+import { useLocation, useParams } from "react-router-dom"
 import {useInfiniteScrollTop} from "6pp"
-import { setFileOpen } from "../../store/slice/authSlice.js"
-import { incrementNotification, removeNewMessageAlert, setNewMessageAlert } from "../../store/slice/chatSlice.js"
+// import { setFileOpen } from "../../store/slice/authSlice.js"
+import { incrementNotification, removeNewMessageAlert, setIsFileOpen, setNewMessageAlert } from "../../store/slice/chatSlice.js"
 import { useSocketEvents } from "../../helpers/hooks.js"
 import MessageCompopnent from "../common/MessageCompopnent.jsx"
 import { AttachFile } from "@mui/icons-material"
@@ -16,6 +16,7 @@ import ChatInfoDialog from "../common/ChatInfoDialog.jsx"
 import {encryptAndSign} from "../../helpers/cryptoutils.js"
 import * as openpgp from "openpgp";
 import { getKey } from "../../helpers/key.js"
+import { useNavigate } from "react-router-dom"
 // import { setPublicKey } from "../../store/slice/publicSlice.js"
 
 
@@ -39,11 +40,13 @@ function getInstitutionAndRoleFromPath() {
   return { institution, role }
 }
 const Chat = (
-  { socket, refetch }
+  { socket, refetch:listRefetch }
 ) => {
   // console.log("socket", socket)
   const { id } = useParams()
-  
+  const isFileOpen = useSelector((state)=>state.chat.isFileOpen)
+  // console.log(isFileOpen)
+  const navigate = useNavigate()
   const avatars = useSelector((state) => state.chat.avatar)
   const idData = useSelector((state)=>state.publicKey)
   //  console.log("avatars", avatars)
@@ -117,24 +120,45 @@ const [isReceiving, setIsReceiving] = useState(false);
 
 
   
+const {
+  data: oldMessageChunk,
+  isLoading: oldMessageLoading,
+  refetch: chatsrefetch,
+} = useGetMessagesQuery({
+  subdomain: institution,
+  role: currentUser?.role,
+  chatId: id,
+  page: page,
+}, {
+  skip: !id || !currentUser,
+  refetchOnMountOrArgChange: true,
+});
+
+
+useEffect(() => {
+  const refetch = async () => {
+    if (id) {
+      await chatsrefetch();
+    }
+  };
+  refetch();
+}, [id, chatsrefetch]);
+
+
+
+
+
+useEffect(() => {
+  // Detect hard reload using Performance API
+  const entries = performance.getEntriesByType("navigation");
+  const isReload = entries.length && entries[0].type === "reload";
+
+  if (isReload && id) {
+    // Only redirect on page reload + when in /chat/:id
+    navigate(`/${institution}/${role}/chat`, { replace: true });
+  }
+}, []); 
   
-  const {data:oldMessageChunk ,isLoading:oldMessageLoading,refetch:chatsrefetch} = useGetMessagesQuery({
-    subdomain: institution,
-    role: currentUser.role,
-    chatId: id,
-    page: page,
-  }, {
-    skip: !id || !currentUser,
-    refetchOnMountOrArgChange: true,
-  })
-  useEffect(() => {
-    const refetch = async () => {
-      if (id) {
-        await chatsrefetch();
-      }
-    };
-    refetch();
-  }, [id, chatsrefetch]);
 
 
 
@@ -151,7 +175,7 @@ const [isReceiving, setIsReceiving] = useState(false);
     oldMessageChunk?.data?.data
   )
     useEffect(() => {
-      dispatch(setFileOpen(false))
+      dispatch(setIsFileOpen(false))
       dispatch(removeNewMessageAlert({ chatId: id }))
   
       return () => {
@@ -179,9 +203,10 @@ const [isReceiving, setIsReceiving] = useState(false);
         }, 300);
       }
     }, [messages]); // Make sure this includes messages
-
+   
   const newMessageAlertHandler = useCallback((data) => {
      console.log("newMessageAlertHandler", data)
+
     if (!data) return;
     if(data.chatId == id) return;
     dispatch(setNewMessageAlert({ chatId: data.chatId }))
@@ -668,7 +693,7 @@ const [isReceiving, setIsReceiving] = useState(false);
   avatar={avatars.image}
   name={avatars.name}
   _id={id}
-  refetch={refetch}
+  refetch={listRefetch}
 />
     <Fragment>
       {isChatSelected ? (
@@ -752,6 +777,7 @@ const [isReceiving, setIsReceiving] = useState(false);
           <input type="file" hidden accept="image/*" ref={imageRef} onChange={handleFileChange} />
           <input type="file" hidden accept="audio/*" ref={audioRef} onChange={handleFileChange} />
           <input type="file" hidden accept="video/*" ref={videoRef} onChange={handleFileChange} />
+          <input type="file" hidden accept="application/*" ref={docRef} onChange={handleFileChange} />
           <input type="file" hidden ref={docRef} onChange={handleFileChange} />
 
           {userIsTyping && typingUser && (
@@ -791,15 +817,27 @@ const [isReceiving, setIsReceiving] = useState(false);
       <Dialog open={fileModalOpen} onClose={() => setFileModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Send Attachment</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* console.log("filePreview", filePreview) */}
           {filePreview?.type?.startsWith("image/") ? (
-            <img src={filePreview.url} alt="Preview" style={{ width: "100%", borderRadius: 8 }} />
-          ) : filePreview?.type?.startsWith("audio/") ? (
-            <audio controls src={filePreview.url} style={{ width: "100%" }} />
-          ) : filePreview?.type?.startsWith("video/") ? (
-            <video controls src={filePreview.url} style={{ width: "100%" }} />
-          ) : (
-            <p>File: {filePreview?.file?.name}</p>
-          )}
+  <img
+    src={filePreview.url}
+    alt="Preview"
+    style={{ width: "100%", borderRadius: 8 }}
+  />
+) : filePreview?.type?.startsWith("audio/") ? (
+  <audio controls src={filePreview.url} style={{ width: "100%" }} />
+) : filePreview?.type?.startsWith("video/") ? (
+  <video controls src={filePreview.url} style={{ width: "100%" }} />
+) : filePreview?.type?.startsWith("application/") ? (
+  <div>
+    <p>File: {filePreview?.file?.name}</p>
+    <a href={filePreview.url} download target="_blank" rel="noopener noreferrer">
+      Download File
+    </a>
+  </div>
+) : (
+  <p>Unsupported file type: {filePreview?.file?.name}</p>
+)}
           <TextField
             label="Add a message"
             fullWidth

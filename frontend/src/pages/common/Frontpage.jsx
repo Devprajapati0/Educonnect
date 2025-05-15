@@ -22,11 +22,14 @@ import toast from "react-hot-toast"
 import { generateKeyPair } from "../../helpers/key"
 import { useDispatch } from "react-redux"
 import { login } from "../../store/slice/authSlice"
-
-function getSubdomainName() {
+function getInstitutionAndRoleFromPath() {
   const pathname = window.location.pathname
   const parts = pathname.split("/").filter(Boolean)
-  return parts.length > 0 ? parts[0].charAt(0) + parts[0].slice(1) : "EduConnect"
+
+  const institution = parts[0] || "EduConnect"
+  const role = parts[1] || "guest"
+
+  return { institution, role }
 }
 
 export default function Frontpage() {
@@ -37,14 +40,15 @@ export default function Frontpage() {
   const [role, setRole] = useState("student")
   const [orgName, setOrgName] = useState("EduConnect")
   const [loading, setLoading] = useState(false)
-
+ const {institution} = getInstitutionAndRoleFromPath()
+ console.log('institution',institution)
   const navigate = useNavigate()
-  const subdomain = getSubdomainName()
+  const subdomain = institution
   const dispatch = useDispatch()
   
 
   useEffect(() => {
-    setOrgName(getSubdomainName())
+    setOrgName(institution)
   }, [])
 
   const handleLogin = async (e) => {
@@ -73,7 +77,7 @@ export default function Frontpage() {
       
       let publicKeyer = null;
          if(response.data.success){
-          // console.log('response',response)
+           console.log('response',response)
         
         toast.success(response.data.message || "Login successful")
         if(response.data.data.user.publicKey == null){
@@ -113,6 +117,7 @@ export default function Frontpage() {
             avatar: user.avatar,
             token:response.data.data.token,
             publicKey:publicKeyer,
+            institution: institution,
           },
           isAuthenticated: true,
         }))

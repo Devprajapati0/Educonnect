@@ -83,7 +83,7 @@ const createGroupChat = asynhandler(async (req, res) => {
     return  res.json(
         new apiresponse(200, chat,  `${groupchat ? "Group" : "Private"} chat created successfully`)
     )   
-
+ 
 
 
   } catch (error) {
@@ -421,6 +421,7 @@ const deleteanyChatForAdmin = asynhandler(async (req, res) => {
     }
 
     const { chatId } = req.body;
+    console.log("chatId", chatId);
 
     // Check if chatId exists and is a valid ObjectId
     if (!chatId || chatId === "undefined") {

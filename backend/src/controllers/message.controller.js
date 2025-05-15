@@ -64,7 +64,7 @@ const sendMessageController = asynhandler(async (req, res) => {
            // return { public_id, url }
           return {
             url: uploadResult.url,
-            fileType: (uploadResult.resource_type),
+            fileType:(uploadResult.format === 'pdf')?'pdf': (uploadResult.resource_type),
           };
         })
       );

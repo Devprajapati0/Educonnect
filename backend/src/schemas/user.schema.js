@@ -68,11 +68,6 @@ export const userPasswordUpdateSchema = z.object({
     .string({ required_error: "Email is required" })
     .email("Please enter a valid email address"),
 
-  oldPassword: z
-    .string({ required_error: "Old password is required" })
-    .min(6, "Old password must be at least 6 characters")
-    .max(100, "Old password must be at most 100 characters"),
-
   newPassword: z
     .string({ required_error: "New password is required" })
     .min(6, "New password must be at least 6 characters")

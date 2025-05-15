@@ -79,5 +79,7 @@ export const updateInstituteProfileSchema = z.object({
   subdomain: z.string().min(1, 'Subdomain is required'),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
+  logo: z.string().optional().nullable(),
+
   
 })

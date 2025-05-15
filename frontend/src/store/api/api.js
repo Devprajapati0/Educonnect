@@ -57,6 +57,7 @@ const api = createApi({
             headers: { 'Content-Type': 'application/json' },
           }),
           providesTags: ['user'],
+          invalidatesTags: ['chat'],
         }),
       
         getAllUsersBasedOnRole: builder.query({
@@ -93,6 +94,7 @@ const api = createApi({
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           }),
+          providesTags: ['chat'],
         }),
       
         getChatDetail: builder.query({
@@ -129,6 +131,7 @@ const api = createApi({
             body: data,
             headers: { 'Content-Type': 'application/json' },
           }),
+
         }),
         upDateChatDetail: builder.mutation({
           query: ({data,subdomain,role}) => ({
@@ -137,6 +140,7 @@ const api = createApi({
             body: data,
             headers: { 'Content-Type': 'application/json' },
           }),
+          invalidatesTags: ['user','chat'],
         }),
         getChatMedia: builder.query({
           query: (data) => ({
@@ -164,7 +168,7 @@ const api = createApi({
         }),
         deleteChat : builder.mutation({
           query: (data) => ({
-            url: `/${data.subdomain}/${data.role}/delete-chat`,
+            url: `/${data.subdomain}/${data.role}/delete-any-chat`,
             method: 'POST',
             body: data,
             headers: { 'Content-Type': 'application/json' },
@@ -217,6 +221,52 @@ const api = createApi({
             headers: { 'Content-Type': 'application/json' },
           }),
         }),
+
+        getAdminsAndStudents: builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-admins-and-students`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        getComplaintsAssignedToMe: builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-complaints-assigned-to-me`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        resolveComplaint: builder.mutation({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/resolve-complaint`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        getMyComplaints: builder.query({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/get-my-complaints`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+        complainToAdmin: builder.mutation({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/submit-complaint`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
+
+        logoutUSer: builder.mutation({
+          query: (data) => ({
+            url: `/${data.subdomain}/${data.role}/logout`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
       })
 })
 
@@ -224,6 +274,7 @@ export const {useGetInstituteProfileQuery,useUpdateInstituteProfileMutation,useA
     useCreateGroupChatMutation,useGetUserForGroupsQuery,useGetMessagesQuery,useGetChatDetailQuery,useSendAttachmentsMutation,useGetUserProfileQuery,useUpdateUserProfileMutation,useUpDateChatDetailMutation
 ,useGetChatMediaQuery,useExitGroupMutation,useGetPublicKeyQuery,useDeleteChatMutation,
 useGetAllUsersforAdminQuery,useDeleteanyChatForAdminMutation,useDeleteUserMutation,useGetDashboardStatsQuery,
-useGetAllChatsofAlluserQuery,useRemoveMemberFromChatMutation
+useGetAllChatsofAlluserQuery,useRemoveMemberFromChatMutation,useComplainToAdminMutation,
+useGetAdminsAndStudentsQuery,useGetComplaintsAssignedToMeQuery,useResolveComplaintMutation,useGetMyComplaintsQuery,useLogoutUSerMutation
 } = api
 export default api;

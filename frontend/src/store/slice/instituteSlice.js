@@ -7,8 +7,10 @@ const initialState = {
         type: "",
         subdomain: "",
         _id: "",
+        isAuthicated: false,
     },
     isActive: false,
+    
 }
 
 const instituteSlice = createSlice({

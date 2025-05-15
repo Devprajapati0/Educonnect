@@ -44,6 +44,8 @@ const ChatList = ({
   const [selectedTab, setSelectedTab] = useState("students");
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // console.log("categorise chat",categorizedChats)
+
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
     navigate(`/${institution}/${role}/chat/`); 
@@ -144,7 +146,7 @@ const ChatList = ({
           align="center"
           sx={{ mb: 2, color: "primary.main", fontWeight: 600 }}
         >
-          Your Chats
+          {role.toUpperCase()} PORTAL 
         </Typography>
 
         <Tabs

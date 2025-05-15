@@ -10,12 +10,16 @@ const initialState = {
       name:"",
       _id:"",
       isGroup:false,
-    }
+    },
+    isFileOpen:false
 };
 export const chatSlice = createSlice({
   name: "use",
   initialState: initialState,
   reducers: {
+    setIsFileOpen: (state, action) => {
+      state.isFileOpen = action.payload;
+    },
    incrementNotification: (state) => {
       state.notificationCount += 1;
     }
@@ -50,6 +54,6 @@ export const chatSlice = createSlice({
 
   },
 });
-export const {removeNewMessageAlert,incrementNotification,decrementNotification,resetNotification,setNewMessageAlert,setAvatar} = chatSlice.actions;
+export const {removeNewMessageAlert,incrementNotification,decrementNotification,resetNotification,setNewMessageAlert,setAvatar,setIsFileOpen} = chatSlice.actions;
 
 export default chatSlice.reducer;

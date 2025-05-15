@@ -191,7 +191,7 @@ const EditInstitutionProfile = () => {
           />
 
           {/* Password Section */}
-          <div className="border-t pt-6">
+          <div className="border-t pt-6 gap-4">
             <Typography variant="h6" gutterBottom className="text-gray-700">
               Change Password
             </Typography>
@@ -202,15 +202,16 @@ const EditInstitutionProfile = () => {
               value={passwords.current}
               onChange={handlePasswordChange('current')}
               autoComplete="current-password"
+              className="mt-4"
             />
-            <TextField
+            <TextField 
               label="New Password"
               type="password"
               fullWidth
               value={passwords.new}
               onChange={handlePasswordChange('new')}
               autoComplete="new-password"
-              className="mt-4"
+              className="mt-4 p-4"
             />
             <TextField
               label="Confirm New Password"
@@ -219,7 +220,7 @@ const EditInstitutionProfile = () => {
               value={passwords.confirm}
               onChange={handlePasswordChange('confirm')}
               autoComplete="new-password"
-              className="mt-4"
+              className="mt-4 m-7"
             />
           </div>
 

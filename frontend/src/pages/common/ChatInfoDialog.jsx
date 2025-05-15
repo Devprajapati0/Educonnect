@@ -290,10 +290,11 @@ const currentUser = useSelector((state) => state.auth.user)
 const members = chatDetail?.data?.members || [];
 //  console.log("members", members)
 // const filteredMembers = members.filter(m => m._id !== currentUser._id);
+// console.log("filteredMembers", chatDetail?.data?.addmembersallowed )
 const creator = chatDetail?.data?.creator || {};
 const isAdmin = chatDetail?.data?.isAdmin?.includes(currentUser._id);
-const [addMembersAllowed, setAddMembersAllowed] = useState(chatDetail?.data?.addmembersallowed || false);
-const [sendMessageAllowed, setSendMessageAllowed] = useState(chatDetail?.data?.sendmessageallowed || false);
+const [addMembersAllowed, setAddMembersAllowed] = useState(chatDetail?.data?.addmembersallowed );
+const [sendMessageAllowed, setSendMessageAllowed] = useState(chatDetail?.data?.sendmessageallowed );
 const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 const [selectedAdmins, setSelectedAdmins] = useState([]);
 const [activeTab, setActiveTab] = useState(0);

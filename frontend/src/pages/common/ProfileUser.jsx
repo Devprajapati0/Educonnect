@@ -21,6 +21,7 @@ function getInstitutionAndRoleFromPath() {
 
 const ProfileUser = () => {
   const { institutions, role } = getInstitutionAndRoleFromPath();
+  console.log(institutions,role)
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [editData, setEditData] = useState({ name: '', avatar: '' });
   const [isEditing, setIsEditing] = useState(false);
@@ -47,10 +48,13 @@ const ProfileUser = () => {
   //   );
   // }
 
+  useEffect(() => {
+    if (isError || (data && !data?.data)) {
+      toast.error(data?.message || 'Failed to load profile.');
+    }
+  }, [isError, data]);
+  
   if (isError || !data?.data) {
-    
-    if(data) {
-    toast.error(data?.message);}
     return (
       <div className="flex justify-center items-center h-screen text-red-500 bg-gray-50">
         Failed to load profile.

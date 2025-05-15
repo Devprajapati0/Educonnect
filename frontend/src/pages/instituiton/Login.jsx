@@ -59,6 +59,7 @@ export default function LoginPage() {
                 type: data.data.type,
                 subdomain: data.data.subdomain,
                 _id:data.data?._id,
+                isAuthicated: true,
               }))
       dispatch(setIsActive(true));
 

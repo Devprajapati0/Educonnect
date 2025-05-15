@@ -8,7 +8,7 @@ const AttachmentSchema = new Schema({
     },
     fileType: {
       type: String,
-      enum: ['image', 'videos',"video", 'raw'],
+      enum: ['image', 'videos',"video", 'pdf', 'audio', 'other' ],
       required: true,
     },
   });

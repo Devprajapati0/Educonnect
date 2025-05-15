@@ -411,9 +411,10 @@ const updateProfile = asynhandler(async (req, res) => {
   }
 
   const institute = await Institution.findById(req.institute._id);
-  console.log("institute", institute)
+  // console.log("institute", institute)
 
   // Validate incoming body
+  console.log("req.body", req.body)
   const parsed = updateInstituteProfileSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.json(
@@ -421,7 +422,7 @@ const updateProfile = asynhandler(async (req, res) => {
     );
   }
 
-  const { fullname, email, type, subdomain, currentPassword, newPassword } = parsed.data;
+  const { fullname, email, type, subdomain, currentPassword, newPassword,logo } = parsed.data;
 
 
   // Update profile fields
@@ -430,10 +431,9 @@ const updateProfile = asynhandler(async (req, res) => {
   institute.type = type || institute.type;
   institute.subdomain = subdomain || institute.subdomain;
 
-  // Optional logo upload
-  if (req.file) {
-    const url = req.file.path;
-    const uploaded = await uploadOnCloudinary(url);
+
+  if (logo) {
+    const uploaded = await uploadOnCloudinary(logo);
     if (uploaded?.url) {
       institute.logo = uploaded.url || institute.logo;
     }

@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 
 function Header() {
-    const authStatus = useSelector((state) => state.institute.isActive)
+    const authStatus = useSelector((state) => state.institute.institute.isAuthicated)
     const dispatch = useDispatch()
     const navigate = useNavigate()
    const navITem = [

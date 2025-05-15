@@ -14,7 +14,7 @@ const userAuthenticator = asynhandler(async(req,res,next) => {
         // console.log("🚀 REQ URL:", req.url);
         // console.log("🚀 REQ PARAMS:", req.params);
         // console.log("🚀 REQ PATH:", req.path);
-         console.log("userToken",userToken)
+        //  console.log("userToken",userToken)
         if(!userToken) {
             return res.json(
                 new apiresponse(401, null,"Unauthorized Access login again")
@@ -22,7 +22,7 @@ const userAuthenticator = asynhandler(async(req,res,next) => {
         }
     
         const decode = jwt.verify(userToken,process.env.USER_SECRET);
-        // console124_DEV.log("decode",decode)
+        //  console.log("decode",decode)
         if(!decode) {
             return res.json(
                 new apiresponse(401, null,"Unauthorized Access login again")
@@ -31,6 +31,7 @@ const userAuthenticator = asynhandler(async(req,res,next) => {
         // console.log("3")
 
         const user = await User.findById(decode._id).select('-password');
+        // console.log("user",user)
         if(!user) {
             return res.json(
                 new apiresponse(401, null,"Unauthorized Access login again")
@@ -39,16 +40,16 @@ const userAuthenticator = asynhandler(async(req,res,next) => {
         // console.log("ddkl fkv ",req.params)
         req.subdomain = req.params.subdomain;
         //  console.log("req.subdomain",req.subdomain)
-        console.log("req.subdomain",req.params.subdomain)
-        console.log("user.institution.subdomain",user.institution.subdomain)
+        // console.log("req.subdomain",req.params.subdomain)
+        // console.log("user.institution.subdomain",user.institution.subdomain)
         
         if(req.subdomain != user.institution.subdomain) {
             return res.json(
                 new apiresponse(401, null,"Unauthorized Access login again")
             )
         }
-        console.log("req.params.role",req.params.role)
-        console.log("user.role",user.role)
+        // console.log("req.params.role",req.params.role)
+        // console.log("user.role",user.role)
 
         if(req.params.role != user.role) {
             return res.json(

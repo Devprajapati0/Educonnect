@@ -10,10 +10,9 @@ const initialState = {
     avatar:"",
     token:"",
     publicKey:"",
+    institution:"",
   },
   isAuthenticated: false,
-  isFileOpen:false,
-  
 };
 export const authSlice = createSlice({
   name: "use",
@@ -23,8 +22,17 @@ export const authSlice = createSlice({
       state.user = action.payload.user;
       state.isAuthenticated = true;
     },
-    logout: (state) => {
-      state.user = null;
+    logouts: (state) => {
+      state.user = {
+        _id: "",
+        username: "",
+        role:"",
+        email:"",
+        avatar:"",
+        token:"",
+        publicKey:"",
+        institution:"",
+      };
       state.isAuthenticated = false;
     },
     setFileOpen: (state, action) => {
@@ -33,6 +41,6 @@ export const authSlice = createSlice({
 
   },
 });
-export const {login,logout,setFileOpen} = authSlice.actions;
+export const {login,logouts,setFileOpen} = authSlice.actions;
 
 export default authSlice.reducer;

@@ -10,7 +10,7 @@ import {
   Avatar,
 } from "@mui/material";
 import { useDispatch } from "react-redux";
-import { setAvatar } from "../../store/slice/chatSlice.js";
+import { setAvatar, setIsFileOpen } from "../../store/slice/chatSlice.js";
 
 
 const ChatItem = React.memo(function ChatItem({
@@ -38,6 +38,7 @@ const ChatItem = React.memo(function ChatItem({
         _id,
         isGroup:groupchat,
       }))
+      dispatch(setIsFileOpen(true));
     }
   // const typer = useSelector((state) => state.chat.startTyping)
   return (

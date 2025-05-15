@@ -1,6 +1,6 @@
 import React from 'react'
 import { useGetInstituteProfileQuery } from '../../store/api/api'
-import { CircularProgress } from '@mui/material'
+import { Avatar, CircularProgress } from '@mui/material'
 import moment from 'moment'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -49,7 +49,7 @@ const Profile = () => {
         <SectionTitle title="Institution Details" />
         <div className="flex items-center gap-6 mb-10">
           {institute.logo ? (
-            <img
+            <Avatar
             src={institute.logo}
             alt="Institution Logo"
             className="w-24 h-24 rounded-full object-cover border border-gray-300"

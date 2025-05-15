@@ -185,10 +185,12 @@ const loginUser = asynhandler(async (req, res) => {
       );
     }
 
-    const { email, password, role } = parseData.data;
+    const { email, password, role,subdomain } = parseData.data;
     const user = await User.findOne({
       email,
       role,
+      "institution.subdomain": subdomain,
+      
     });
 
     if (!user) {
@@ -273,17 +275,13 @@ const updateUserPasssword = asynhandler(async(req,res) => {
         console.log("Validation error:", parseData.error.format?.())
         return res.json(new apiresponse(400, null, "Invalid input fields"))
       }
-     const {role,subdomain,email,oldPassword,newPassword,confirmPassword} = parseData.data
+     const {role,subdomain,email,newPassword,confirmPassword} = parseData.data
     const user = await User.findOne({email,role, "institution.subdomain": subdomain}) 
     if (!user) {
       return res.json(new apiresponse(404, null, "User not found"))
     }
     if(newPassword !== confirmPassword){
       return res.json(new apiresponse(400, null, "New password and confirm password do not match"))
-    }
-    const isMatch = await bcrypt.compare(oldPassword, user.password)
-    if (!isMatch) {
-      return res.json(new apiresponse(400, null, "Invalid old password"))
     }
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10)
@@ -432,6 +430,7 @@ const getUserProfile = asynhandler(async (req, res) => {
       return res.json(new apiresponse(401, null, "login to your account"));
     }
     const { _id,role ,institution} = req.user;
+    console.log("getUserProfile",req.user)
 
     const data = await User.findById(
       _id,
@@ -799,6 +798,30 @@ const getDashboardStats = asynhandler(async (req, res) => {
   }
 });
 
+const logoutUser = asynhandler(async (req, res) => {
+  try {
+    if(!req.user){
+      return res.json(new apiresponse(401, null, "Unauthorized access"));
+    }
+    const { _id, role, institution } = req.user;
+    // Check if the user is logged in
+    if (!req.cookies.userToken) {
+      return res.json(new apiresponse(401, null, "No token found"));
+    }
+    // Clear the cookie
+    res.clearCookie("userToken", {
+      httpOnly: true,
+      secure: true,
+    });
+
+    return res.json(new apiresponse(200, null, "Logged out successfully"));
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.json(new apiresponse(500, null, "Failed to log out"));
+  }
+}
+);
+
 export {
     userSignup,
     loginUser,
@@ -811,5 +834,6 @@ export {
     getPublicKey,
     getAllUsersForAdmin,
     deleteUser,
-    getDashboardStats
+    getDashboardStats,
+    logoutUser
 }

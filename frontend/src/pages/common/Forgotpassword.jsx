@@ -25,18 +25,18 @@ function getSubdomainName() {
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("")
-  const [oldPassword, setOldPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [role, setRole] = useState("student")
-  const [showOld, setShowOld] = useState(false)
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState("")
+  const [showNote, setShowNote] = useState(false)
 
   const subdomain = getSubdomainName()
-  const [updatePassword, { isLoading ,isError}] = useUpdateUserPasswordMutation()
-  if(isError){
+  const [updatePassword, { isLoading, isError }] = useUpdateUserPasswordMutation()
+
+  if (isError) {
     toast.error("Something went wrong")
   }
 
@@ -44,7 +44,7 @@ export default function ResetPassword() {
     e.preventDefault()
     setError("")
 
-    if (!email || !oldPassword || !newPassword || !confirmPassword) {
+    if (!email || !newPassword || !confirmPassword) {
       setError("All fields are required")
       return
     }
@@ -57,7 +57,6 @@ export default function ResetPassword() {
     try {
       const payload = {
         email,
-        oldPassword,
         newPassword,
         confirmPassword,
         role,
@@ -65,13 +64,17 @@ export default function ResetPassword() {
       }
 
       const response = await updatePassword(payload).unwrap()
-      toast.success(response.message || "Password updated successfully")
+      console.log(response)
+      if (response.statuscode !== 200) {
+        toast.error(response.message)
+        return
+      }
 
-      // Clear fields after success
+      toast.success(response.message || "Password updated successfully")
       setEmail("")
-      setOldPassword("")
       setNewPassword("")
       setConfirmPassword("")
+      setShowNote(false)
     } catch (err) {
       console.error(err)
       toast.error(err?.data?.message || "Something went wrong")
@@ -123,30 +126,14 @@ export default function ResetPassword() {
 
           <TextField
             fullWidth
-            label="Old Password"
-            type={showOld ? "text" : "password"}
-            variant="outlined"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            required
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowOld(!showOld)} edge="end">
-                    {showOld ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <TextField
-            fullWidth
             label="New Password"
             type={showNew ? "text" : "password"}
             variant="outlined"
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+            onChange={(e) => {
+              setNewPassword(e.target.value)
+              setShowNote(true)
+            }}
             required
             InputProps={{
               endAdornment: (
@@ -158,6 +145,13 @@ export default function ResetPassword() {
               ),
             }}
           />
+
+          {/* Password note */}
+          {showNote && (
+            <div className="text-sm text-blue-600 px-3 py-1 rounded-md bg-blue-100 border border-blue-300 shadow animate-[slide_1.5s_ease-in-out_infinite]">
+              Password must be at least 6 characters long
+            </div>
+          )}
 
           <TextField
             fullWidth
@@ -193,6 +187,20 @@ export default function ResetPassword() {
           </Button>
         </form>
       </Paper>
+
+      {/* Tailwind animation keyframes */}
+      <style>
+        {`
+        @keyframes slide {
+          0% { transform: translateX(-8px); }
+          50% { transform: translateX(8px); }
+          100% { transform: translateX(-8px); }
+        }
+        .animate-slide {
+          animation: slide 1.5s infinite ease-in-out;
+        }
+        `}
+      </style>
     </div>
   )
 }

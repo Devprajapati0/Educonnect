@@ -1,7 +1,8 @@
 import {Router} from 'express';
-import {userSignup,loginUser,updatePublicKey, updateUserPasssword,updateUserProfile,getUserProfile, getAllUsersBasedOnRole,getUserForGroups,getPublicKey,getAllUsersForAdmin,deleteUser,getDashboardStats} from '../controllers/user.controller.js';
+import {userSignup,loginUser,updatePublicKey, updateUserPasssword,updateUserProfile,getUserProfile, getAllUsersBasedOnRole,getUserForGroups,getPublicKey,getAllUsersForAdmin,deleteUser,getDashboardStats,logoutUser} from '../controllers/user.controller.js';
 import {createGroupChat,getChatDetails,updateChatDetail,getMyChats,exitGroup,deleteChat,deleteanyChatForAdmin,getAllChatsOfAllUsers,removeMemeberFromGroupChat} from '../controllers/chat.controller.js';
 import { getIndividualMessageController,getChatMediaController} from '../controllers/message.controller.js';
+import {getAdminsAndStudents,submitComplaint,getMyComplaints,resolveComplaint,getComplaintsAssignedToMe} from "../controllers/complain.controller.js"
 import { upload } from '../middlewares/multer.middleware.js';
 import userAuthenticator from '../middlewares/jwt.middleware.js';
 
@@ -19,6 +20,7 @@ router.route('/get-public-key').post(userAuthenticator,getPublicKey);
 router.route('/get-all-users-for-admin').get(userAuthenticator,getAllUsersForAdmin);
 router.route('/delete-user').post(userAuthenticator,deleteUser);
 router.route('/get-dashboard-stats').get(userAuthenticator,getDashboardStats);
+router.route('/logout').get(userAuthenticator,logoutUser);
 
 
 //chat
@@ -37,6 +39,12 @@ router.route('/remove-member').post(userAuthenticator,removeMemeberFromGroupChat
 router.route('/get-all-messages/:chatId').get(userAuthenticator,getIndividualMessageController);
 router.route('/get-chat-media').post(userAuthenticator,getChatMediaController);
 
+//complain
+router.route('/submit-complaint').post(userAuthenticator,upload.single('attachment'),submitComplaint);
+router.route('/get-my-complaints').get(userAuthenticator,getMyComplaints);
+router.route('/get-complaints-assigned-to-me').get(userAuthenticator,getComplaintsAssignedToMe);
+router.route('/resolve-complaint').post(userAuthenticator,resolveComplaint);
+router.route('/get-admins-and-students').get(userAuthenticator,getAdminsAndStudents);
 
 
 export default router;

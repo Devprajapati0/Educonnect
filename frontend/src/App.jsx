@@ -2,6 +2,9 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { SocketProvider } from './socket/Socket.jsx'
 import { Loader } from 'lucide-react'
+import RoleProtectedRoute from './pages/common/ProtectRoute.jsx'
+import { InstituteProtectRoute } from './pages/common/ProtectRoute.jsx'
+import NotFound from './pages/common/PageNotFound.jsx'
 // import AdminLayout from './pages/admin/AdminLayout.jsx'
 
 // import Order from './Order.jsx'
@@ -22,6 +25,8 @@ const Forgotpassword = lazy(() => import('./pages/common/Forgotpassword.jsx'))
 const ProfileUser = lazy(() => import('./pages/common/ProfileUser.jsx'))
 const Users = lazy(() => import('./pages/admin/Users.jsx'))
 const Chats = lazy(() => import('./pages/admin/Chats.jsx'))
+const Complain = lazy(() => import('./pages/common/Complain.jsx'))
+const ComplainPortal = lazy(() => import('./pages/admin/ComplainPortal.jsx'))
 
 // const Adminchat = lazy(() => import('./pages/admin/Adminchat.jsx'))
 const App = () => {
@@ -45,20 +50,30 @@ const App = () => {
             <Route path="/signup" element={<Signup />} />
             <Route path="/success" element={<Success />} />
             <Route path='/login' element={<Login />} />
-            <Route path='/profile' element={<Profile/>} />
-            <Route path='/profile/edit' element={<Edit/>} />
+            <Route path="/profile" element={<InstituteProtectRoute />}>
+  <Route index element={<Profile />} />
+  <Route path="edit" element={<Edit />} />
+</Route>
 
             <Route path = '/:subdomain/login' element={<Frontpage/>}/>
             <Route path = '/:subdomain/forgot-password' element={<Forgotpassword/>}/>
-            <Route path = '/:subdomain/admin/dashboard' element={<Dashboard/>}/>
-            <Route path = '/:subdomain/admin/add-user' element={<Adduser/>}/>
+            
+            <Route path='/:subdomain/:role' element={<RoleProtectedRoute/>}>
             <Route path=  '/:subdomain/:role/update-profile' element={<ProfileUser/>} />
             <Route path = '/:subdomain/:role/chat' element={<Adminchat/>}/>
             <Route path = '/:subdomain/:role/chat/:id' element={<Adminchat/>}/>
-
-           
             <Route path = '/:subdomain/:role/dashboard/users' element={<Users/>}/>
             <Route path = '/:subdomain/:role/dashboard/chats' element={<Chats/>}/>
+            </Route>
+            <Route path='/:subdomain/admin' element={<RoleProtectedRoute/>}>
+            <Route path = '/:subdomain/admin/dashboard' element={<Dashboard/>}/>
+            <Route path = '/:subdomain/admin/add-user' element={<Adduser/>}/>
+            <Route path = '/:subdomain/admin/complain' element={<ComplainPortal/>}/>
+            </Route>
+            <Route path='/:subdomain/teacher' element={<RoleProtectedRoute/>}>
+            <Route path = '/:subdomain/teacher/complain' element={<Complain/>}/>
+            </Route>
+            <Route path='*' element={<NotFound/>} />
             </Routes>
             
             
