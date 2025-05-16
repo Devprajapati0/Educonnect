@@ -13,12 +13,13 @@ import {
 } from '@mui/material'
 import { Business } from '@mui/icons-material'
 import toast from 'react-hot-toast'
+import Header from './Header'
 
 const EditInstitutionProfile = () => {
   const navigate = useNavigate()
   const { data, isLoading, isError } = useGetInstituteProfileQuery()
-   const [updateProfile, { isLoading: isUpdating }] = useUpdateInstituteProfileMutation()
-  // console.log(updateProfile)
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateInstituteProfileMutation()
+
   const [form, setForm] = useState({
     fullname: '',
     email: '',
@@ -89,7 +90,6 @@ const EditInstitutionProfile = () => {
       }
 
       const res = await updateProfile(payload).unwrap()
-      console.log(res)
       toast.success('Profile updated successfully!')
       navigate('/profile')
     } catch (err) {
@@ -115,16 +115,19 @@ const EditInstitutionProfile = () => {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-gray-100 py-12 px-4 flex justify-center items-start">
-      <div className="w-full max-w-2xl bg-white shadow-2xl rounded-2xl p-10 border border-gray-200">
-        <h1 className="text-4xl font-semibold text-center text-gray-800 mb-8">
+  return (<>
+
+    <Header />
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-gray-100 py-10 px-4 flex justify-center items-start">
+      <div className="w-full max-w-3xl bg-white shadow-xl rounded-2xl p-6 sm:p-8 md:p-10 border border-gray-200">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-center text-gray-800 mb-6 md:mb-10">
           Edit Institution Profile
         </h1>
 
-        <div className="flex flex-col items-center gap-3 mb-10">
+        {/* Logo Upload Section */}
+        <div className="flex flex-col items-center gap-3 mb-8 sm:mb-10">
           <div
-            className="w-32 h-32 rounded-full border-4 border-gray-300 overflow-hidden shadow-md cursor-pointer relative group"
+            className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-gray-300 overflow-hidden shadow-md cursor-pointer relative group"
             onClick={handleUploadClick}
           >
             {image ? (
@@ -151,6 +154,7 @@ const EditInstitutionProfile = () => {
           </Button>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
           <TextField
             label="Full Name"
@@ -191,48 +195,53 @@ const EditInstitutionProfile = () => {
           />
 
           {/* Password Section */}
-          <div className="border-t pt-6 gap-4">
-            <Typography variant="h6" gutterBottom className="text-gray-700">
+          <div className="pt-6 border-t border-gray-200">
+            <Typography variant="h6" gutterBottom className="text-gray-700 mb-2">
               Change Password
             </Typography>
-            <TextField
-              label="Current Password"
-              type="password"
-              fullWidth
-              value={passwords.current}
-              onChange={handlePasswordChange('current')}
-              autoComplete="current-password"
-              className="mt-4"
-            />
-            <TextField 
-              label="New Password"
-              type="password"
-              fullWidth
-              value={passwords.new}
-              onChange={handlePasswordChange('new')}
-              autoComplete="new-password"
-              className="mt-4 p-4"
-            />
-            <TextField
-              label="Confirm New Password"
-              type="password"
-              fullWidth
-              value={passwords.confirm}
-              onChange={handlePasswordChange('confirm')}
-              autoComplete="new-password"
-              className="mt-4 m-7"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField
+                label="Current Password"
+                type="password"
+                value={passwords.current}
+                onChange={handlePasswordChange('current')}
+                fullWidth
+                autoComplete="current-password"
+              />
+              <TextField
+                label="New Password"
+                type="password"
+                value={passwords.new}
+                onChange={handlePasswordChange('new')}
+                fullWidth
+                autoComplete="new-password"
+              />
+              <TextField
+                label="Confirm New Password"
+                type="password"
+                value={passwords.confirm}
+                onChange={handlePasswordChange('confirm')}
+                fullWidth
+                autoComplete="new-password"
+              />
+            </div>
           </div>
 
-          <div className="flex justify-between items-center mt-6">
-            <Button variant="outlined" color="secondary" onClick={() => navigate('/profile')}>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8">
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => navigate('/profile')}
+              fullWidth={window.innerWidth < 640}
+            >
               Cancel
             </Button>
             <Button
               variant="contained"
               color="primary"
               type="submit"
-               disabled={isUpdating}
+              disabled={isUpdating}
+              fullWidth={window.innerWidth < 640}
             >
               {isUpdating ? 'Updating...' : 'Save Changes'}
             </Button>
@@ -240,6 +249,7 @@ const EditInstitutionProfile = () => {
         </form>
       </div>
     </div>
+    </>
   )
 }
 

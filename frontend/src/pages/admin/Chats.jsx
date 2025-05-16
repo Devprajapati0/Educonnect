@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import {
   Box, Typography, Dialog, DialogTitle, DialogContent,
-  DialogActions, Button, IconButton, Stack, Avatar
+  DialogActions, Button, IconButton, Stack, Avatar, Drawer, useMediaQuery
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PeopleAltIcon from '@mui/icons-material/People';
-import toast from 'react-hot-toast';
-import { useGetAllChatsofAlluserQuery, useDeleteChatMutation, useRemoveMemberFromChatMutation } from '../../store/api/api';
-import Leftbar from '../common/Leftbar';
-import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import toast from 'react-hot-toast';
+import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
+import Leftbar from '../common/Leftbar';
+import {
+  useGetAllChatsofAlluserQuery,
+  useDeleteChatMutation,
+  useRemoveMemberFromChatMutation
+} from '../../store/api/api';
 import { deleteKey } from '../../helpers/key.js';
 
 const getInstitutionAndRoleFromPath = () => {
@@ -19,9 +24,13 @@ const getInstitutionAndRoleFromPath = () => {
   return { institution: parts[0] || 'EduConnect', role: parts[1] || 'guest' };
 };
 
+const drawerWidth = 70;
+
 const ChatManagement = () => {
   const { institution, role } = getInstitutionAndRoleFromPath();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const { data, isLoading, refetch } = useGetAllChatsofAlluserQuery({
     subdomain: institution,
@@ -40,17 +49,13 @@ const ChatManagement = () => {
 
   const handleDeleteChat = async (chatId) => {
     try {
-     const res = await deleteChat({ chatId, subdomain: institution, role });
-     console.log("Deletechatres",res);
-     if(res.data.success){
-      //delete privateKey fir indexDb
-      await deleteKey("privateKey");
-      toast.success("Chat deleted successfully");
-
-     }
-        else{
-            toast.error("Error while Deleting Chat")
-            }
+      const res = await deleteChat({ chatId, subdomain: institution, role });
+      if (res.data.success) {
+        await deleteKey("privateKey");
+        toast.success("Chat deleted successfully");
+      } else {
+        toast.error("Error while deleting chat");
+      }
       refetch();
     } catch {
       toast.error("Failed to delete chat");
@@ -59,16 +64,15 @@ const ChatManagement = () => {
 
   const handleRemoveMember = async (chatId, memberId) => {
     try {
-      const res =await removeMember({ chatId, memberId, subdomain: institution, role });
-      console.log("mmeberremove",res)
-      if(res.data.statuscode == 200){
-        toast.success(res.data.message || "memeber removed successfully");
+      const res = await removeMember({ chatId, memberId, subdomain: institution, role });
+      if (res.data.statuscode === 200) {
+        toast.success(res.data.message || "Member removed successfully");
+      } else {
+        toast.error(res.data.message);
       }
-      else{
-      toast.error(res.data.message);}
       refetch();
     } catch {
-      toast.error( "Failed to remove member");
+      toast.error("Failed to remove member");
     }
   };
 
@@ -96,7 +100,9 @@ const ChatManagement = () => {
       headerName: 'Creator',
       width: 180,
       renderCell: (params) => (
-        <Typography variant="body2">{ params.row.groupchat &&  params.row.creator?.fullname || '-'}</Typography>
+        <Typography variant="body2">
+          {params.row.groupchat ? params.row.creator?.fullname : '-'}
+        </Typography>
       ),
     },
     {
@@ -144,17 +150,45 @@ const ChatManagement = () => {
   ];
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Leftbar />
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        {/* Header */}
+    <Box sx={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
+      {/* Fixed Sidebar */}
+      <Drawer
+        variant="permanent"
+        open
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            bgcolor: '#0e1c2f',
+            borderRight: '1px solid #1f2937',
+            position: 'fixed',
+            height: '100vh',
+            top: 0,
+            left: 0,
+          },
+        }}
+      >
+        <Leftbar />
+      </Drawer>
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: { xs: 2, sm: 3 },
+          ml: ` sm :${drawerWidth}px`,
+          width: `calc(100% - ${drawerWidth}px)`,
+        }}
+      >
         <Stack
-          direction="row"
+          direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          spacing={2}
           mb={3}
-          flexWrap="wrap"
-          gap={2}
         >
           <Typography variant="h4" fontWeight="bold">
             💬 Chat Management
@@ -168,11 +202,11 @@ const ChatManagement = () => {
           </Button>
         </Stack>
 
-        {/* Table */}
+        {/* Data Table */}
         {isLoading ? (
           <Typography>Loading chats...</Typography>
         ) : (
-          <Box sx={{ height: 600 }}>
+          <Box sx={{ width: '100%' }}>
             <DataGrid
               rows={chats.map((chat) => ({ id: chat._id, ...chat }))}
               columns={columns}
@@ -180,7 +214,10 @@ const ChatManagement = () => {
               rowsPerPageOptions={[10, 25, 50]}
               autoHeight
               disableSelectionOnClick
-              sx={{ borderRadius: 2, bgcolor: "white" }}
+              sx={{
+                borderRadius: 2,
+                bgcolor: 'white',
+              }}
             />
           </Box>
         )}
@@ -190,43 +227,46 @@ const ChatManagement = () => {
           <DialogTitle>Group Members</DialogTitle>
           <DialogContent dividers>
             <Stack spacing={2}>
-            {selectedChat?.members?.map((member) => {
-  const isAdmin = selectedChat?.isAdmin?.includes(member._id);
-
-  return (
-    <Stack
-      key={member._id}
-      direction="row"
-      alignItems="center"
-      justifyContent="space-between"
-    >
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Avatar src={member.avatar || '/path/to/default-avatar.png'}>
-          {!member.avatar && member.name?.charAt(0)}
-        </Avatar>
-        <Typography>
-          {member.name} {isAdmin && (<span className="ml-2 inline-flex items-center gap-1 bg-green-200 text-green-900 text-xs font-semibold px-3 py-1 rounded-full shadow-sm border border-green-300">
-      <svg
-        className="w-2 h-2 fill-green-600"
-        viewBox="0 0 8 8"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <circle cx="4" cy="4" r="4" />
-      </svg>
-      Admin
-    </span>)}
-        </Typography>
-      </Stack>
-      <Button
-        size="small"
-        color="error"
-        onClick={() => handleRemoveMember(selectedChat._id, member._id)}
-      >
-        Remove
-      </Button>
-    </Stack>
-  );
-})}
+              {selectedChat?.members?.map((member) => {
+                const isAdmin = selectedChat?.isAdmin?.includes(member._id);
+                return (
+                  <Stack
+                    key={member._id}
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar src={member.avatar}>
+                        {!member.avatar && member.name?.charAt(0)}
+                      </Avatar>
+                      <Typography>
+                        {member.name}{' '}
+                        {isAdmin && (
+                          <span style={{
+                            backgroundColor: '#dcfce7',
+                            color: '#065f46',
+                            fontSize: '0.75rem',
+                            padding: '4px 8px',
+                            borderRadius: '9999px',
+                            border: '1px solid #bbf7d0',
+                            marginLeft: '8px'
+                          }}>
+                            Admin
+                          </span>
+                        )}
+                      </Typography>
+                    </Stack>
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => handleRemoveMember(selectedChat._id, member._id)}
+                    >
+                      Remove
+                    </Button>
+                  </Stack>
+                );
+              })}
             </Stack>
           </DialogContent>
           <DialogActions>

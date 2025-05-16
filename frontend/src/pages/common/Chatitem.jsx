@@ -21,7 +21,7 @@ const ChatItem = React.memo(function ChatItem({
   role,
   subdomain,
   newMessageAlert,
-  // onClick, // NEW
+   onClick, // NEW
   isOnline,
   groupchat
 }) {
@@ -31,6 +31,10 @@ const ChatItem = React.memo(function ChatItem({
   const theme = useTheme();
    const dispatch = useDispatch();
     const handleClick = () => {
+      // Call the onClick function passed as a prop
+      if (onClick) {
+        onClick(_id);
+      }
       dispatch(setAvatar({
         image:avatar,
         chatId:_id,

@@ -113,56 +113,88 @@ const UserManagement = () => {
   ];
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box className="min-h-screen bg-gray-100 flex">
+    {/* Fixed Leftbar */}
+    <Box
+      sx={{
+        width: 70,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        height: '100vh',
+        bgcolor: '#0e1c2f',
+        zIndex: 1100,
+        borderRight: '1px solid #1f2937',
+      }}
+    >
       <Leftbar />
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
-  <Typography variant="h4" fontWeight="bold">
-    👥 User Management
-  </Typography>
-  <Button
-    variant="outlined"
-    startIcon={<ArrowBackIcon />}
-    onClick={() => navigate(`/${institution}/${role}/dashboard`)}
-  >
-    Back to Dashboard
-  </Button>
-</Stack>
-        {isLoading ? (
-          <Typography>Loading...</Typography>
-        ) : (
-          <Box sx={{ height: 600, width: '100%' }}>
-            <DataGrid
-              rows={users.map((user) => ({ id: user._id, ...user }))}
-              columns={columns}
-              pageSize={10}
-              rowsPerPageOptions={[10, 25, 50]}
-              disableSelectionOnClick
-              autoHeight
-              sx={{
-                borderRadius: 2,
-                bgcolor: 'white',
-              }}
-            />
-          </Box>
-        )}
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={Boolean(selectedUser)} onClose={() => setSelectedUser(null)}>
-          <DialogTitle>Confirm Delete</DialogTitle>
-          <DialogContent>
-            Are you sure you want to delete user{' '}
-            <strong>{selectedUser?.name}</strong>?
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setSelectedUser(null)}>Cancel</Button>
-            <Button color="error" variant="contained" onClick={handleConfirmDelete}>
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
     </Box>
+  
+    {/* Main Content */}
+    <Box
+      component="main"
+      sx={{
+        flexGrow: 1,
+        ml: { xs: '70px' }, // Margin to accommodate fixed leftbar
+        width: { xs: 'calc(100% - 70px)' },
+        p: { xs: 2, sm: 3 },
+      }}
+    >
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        spacing={2}
+        mb={3}
+        flexWrap="wrap"
+      >
+        <Typography variant="h4" fontWeight="bold">
+          👥 User Management
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(`/${institution}/${role}/dashboard`)}
+        >
+          Back to Dashboard
+        </Button>
+      </Stack>
+  
+      {isLoading ? (
+        <Typography>Loading...</Typography>
+      ) : (
+        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+          <DataGrid
+            rows={users.map((user) => ({ id: user._id, ...user }))}
+            columns={columns}
+            pageSize={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            disableSelectionOnClick
+            autoHeight
+            sx={{
+              borderRadius: 2,
+              bgcolor: 'white',
+              minWidth: 600, // ensures horizontal scroll on very small screens
+            }}
+          />
+        </Box>
+      )}
+  
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={Boolean(selectedUser)} onClose={() => setSelectedUser(null)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete user <strong>{selectedUser?.name}</strong>?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedUser(null)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={handleConfirmDelete}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  </Box>
   );
 };
 

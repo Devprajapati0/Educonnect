@@ -3,41 +3,33 @@ import {
   Button, Box, Typography, Paper, Divider, Grid, Snackbar,
   Dialog, DialogTitle, DialogContent, DialogActions,
   List, ListItem, ListItemButton, ListItemText, Chip,
-  ListItemIcon, Tooltip, Badge,ListItemAvatar, Avatar
+  ListItemIcon, Tooltip, Badge, ListItemAvatar, Avatar,
+  Collapse, IconButton
 } from '@mui/material';
-import { CheckCircle, HourglassEmpty } from '@mui/icons-material';
+import { CheckCircle, HourglassEmpty, Cancel, ExpandLess, ExpandMore } from '@mui/icons-material';
 import { Editor } from '@tinymce/tinymce-react';
 import { styled } from '@mui/system';
-import { Collapse, IconButton } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import Cancel from "@mui/icons-material/Cancel";
-// Dummy data
-const dummyAdmins = ['Admin John', 'Admin Jane', 'Admin Robert'];
-const dummyStudents = ['Student A', 'Student B', 'Student C'];
-const dummyComplaints = [
-  { id: 1, title: 'Misbehavior by Student A', approved: true },
-  { id: 2, title: 'Late assignment submission', approved: false },
-  { id: 3, title: 'Disruption in class by Student C', approved: true },
-];
+import Leftbar from './Leftbar';
+import {
+  useComplainToAdminMutation,
+  useGetAdminsAndStudentsQuery,
+  useGetMyComplaintsQuery,
+} from '../../store/api/api';
 
 function getInstitutionAndRoleFromPath() {
-  const pathname = window.location.pathname
-  const parts = pathname.split("/").filter(Boolean)
-
-  const institution = parts[0] || "EduConnect"
-  const role = parts[1] || "guest"
-
-  return { institution, role }
+  const parts = window.location.pathname.split("/").filter(Boolean);
+  const institution = parts[0] || "EduConnect";
+  const role = parts[1] || "guest";
+  return { institution, role };
 }
 
+// Styled Components
 const ComplaintContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   borderRadius: 8,
+  width: '100%',
 }));
 
-import Leftbar from './Leftbar';
-import { useComplainToAdminMutation, useGetAdminsAndStudentsQuery, useGetMyComplaintsQuery } from '../../store/api/api';
 const Title = styled(Typography)(({ theme }) => ({
   fontSize: '24px',
   fontWeight: 600,
@@ -45,7 +37,8 @@ const Title = styled(Typography)(({ theme }) => ({
   textAlign: 'center',
 }));
 
-const StyledEditor = styled(Editor)(({ theme }) => ({
+const StyledEditor = styled(Editor)(() => ({
+  width: '100%',
   '& .tox-editor-container': {
     border: '1px solid #ddd',
     borderRadius: 8,
@@ -71,6 +64,7 @@ const ComplaintHistory = styled(Paper)(({ theme }) => ({
   overflowY: 'auto',
   borderRadius: 8,
   backgroundColor: '#fdfdfd',
+  width: '100%',
 }));
 
 const ComplaintBox = () => {
@@ -81,82 +75,54 @@ const ComplaintBox = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
   const [openStudentDialog, setOpenStudentDialog] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
 
-  const handleChange = (content) => setComplaint(content);
-  const {institution, role} = getInstitutionAndRoleFromPath()
+  const { institution, role } = getInstitutionAndRoleFromPath();
+  const apiKey = import.meta.env.VITE_TINY_MCE_API_KEY;
 
-  const {data} = useGetAdminsAndStudentsQuery({
-    subdomain:institution,
-    role,
-  }, {
-    refetchOnMountOrArgChange: true,
-    skip: !institution || !role,
-  });
+  const { data } = useGetAdminsAndStudentsQuery(
+    { subdomain: institution, role },
+    { refetchOnMountOrArgChange: true, skip: !institution || !role }
+  );
 
-  const [complainToAdmin ]= useComplainToAdminMutation();
-  const {data:getMyComplain,refetch} = useGetMyComplaintsQuery({
-    subdomain: institution,
-    role, 
-  }, {
-    refetchOnMountOrArgChange: true,
-    skip: !institution || !role,
-  });
-  console.log("getMyComplain", getMyComplain)
-  const complain = getMyComplain?.data || [];
-  // console.log("data", data)
+  const [complainToAdmin] = useComplainToAdminMutation();
+  const { data: getMyComplain, refetch } = useGetMyComplaintsQuery(
+    { subdomain: institution, role },
+    { refetchOnMountOrArgChange: true, skip: !institution || !role }
+  );
+
   const admins = data?.data?.admin || [];
   const students = data?.data?.student || [];
-  // console.log("admins", admins)
-  // console.log("students", students)
+  const complainList = getMyComplain?.data || [];
+
   const extractBase64Images = (html) => {
     const imgRegex = /<img[^>]+src=["'](data:image\/[^"']+)["'][^>]*>/g;
     let match;
     const base64Images = [];
-  
     while ((match = imgRegex.exec(html)) !== null) {
-      base64Images.push(match[1]); // the base64 string
+      base64Images.push(match[1]);
     }
-  
     return base64Images;
   };
 
   const handleSubmit = async () => {
-    if (!selectedAdmin) {
-      setSnackbarMessage('Please select an admin before submitting.');
-      setOpenSnackbar(true);
-      return;
-    }
-    if(!selectedStudent) {
-      setSnackbarMessage('Please select a student before submitting.');
+    if (!selectedAdmin || !selectedStudent || !complaint.trim()) {
+      setSnackbarMessage('Please complete all fields before submitting.');
       setOpenSnackbar(true);
       return;
     }
 
-    if (complaint.trim() === '') {
-      setSnackbarMessage('Please write a complaint before submitting.');
-      setOpenSnackbar(true);
-      return;
-    }
     const base64Imgs = extractBase64Images(complaint);
-    console.log('Base64 Images:', base64Imgs);
     try {
-      console.log('Submitting complaint:', {
-        complaint,
-        to: selectedAdmin,
-        referTo: selectedStudent,
-      });
-
-      const data = {
+      const response = await complainToAdmin({
         content: complaint,
         toAdmin: selectedAdmin._id,
         referToStudent: selectedStudent._id,
         attachment: base64Imgs[0] || null,
         subdomain: institution,
         role,
-      };
-      const response = await complainToAdmin(data).unwrap();
-      console.log('Response:', response);
+      }).unwrap();
+
       if (response.statuscode === 201) {
         setSnackbarMessage('Complaint submitted successfully!');
         setComplaint('');
@@ -166,233 +132,171 @@ const ComplaintBox = () => {
       } else {
         setSnackbarMessage('Error submitting complaint.');
       }
-    } catch (error) {
+    } catch (err) {
       setSnackbarMessage('Submission failed. Try again.');
     } finally {
       setOpenSnackbar(true);
     }
   };
 
-  const apiKey = import.meta.env.VITE_TINY_MCE_API_KEY;
+  return (
+    <div className="flex" style={{ minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
+      <Box sx={{ width: 70, position: 'fixed', top: 0, left: 0, height: '100vh', bgcolor: '#0e1c2f', zIndex: 1100 }}>
+        <Leftbar />
+      </Box>
 
-  return (<div className='flex'>
+      <Box sx={{ ml: '70px', p: 2 }}>
+        <Grid container spacing={2} direction={{ xs: 'column', sm: 'row' }}>
+          {/* Complaint Form */}
+          <Grid item xs={12} sm={6} md={4}>
+            <ComplaintContainer>
+              <Title>Submit a Complaint</Title>
 
-      <Leftbar />
-
-    <Box sx={{ maxWidth: '1200px', margin: 'auto', padding: 3 }}>
-      <Grid container spacing={3}>
-        {/* Left: Complaint Form */}
-        <Grid item xs={12} md={7}>
-          <ComplaintContainer>
-            <Title>Submit a Complaint</Title>
-
-            <Grid container spacing={2} mb={2}>
-              <Grid item>
-                <Button variant="outlined" onClick={() => setOpenAdminDialog(true)}>
-                  Select Admin
-                </Button>
+              <Grid container spacing={1} mb={2}>
+                <Grid item xs={6}>
+                  <Button variant="outlined" onClick={() => setOpenAdminDialog(true)} fullWidth>Select Admin</Button>
+                </Grid>
+                <Grid item xs={6}>
+                  <Button variant="outlined" onClick={() => setOpenStudentDialog(true)} fullWidth>Select Student</Button>
+                </Grid>
               </Grid>
-              <Grid item>
-                <Button variant="outlined" onClick={() => setOpenStudentDialog(true)}>
-                  Select Student 
-                </Button>
+
+              <Grid container spacing={1} mb={2}>
+                {selectedAdmin && (
+                  <Grid item xs={12} sm="auto">
+                    <Chip
+                      label={`Admin: ${selectedAdmin.name}`}
+                      avatar={<Avatar src={selectedAdmin.avatar || ''} />}
+                      color="primary"
+                      onDelete={() => setSelectedAdmin('')}
+                    />
+                  </Grid>
+                )}
+                {selectedStudent && (
+                  <Grid item xs={12} sm="auto">
+                    <Chip
+                      label={`Student: ${selectedStudent.name}`}
+                      avatar={<Avatar src={selectedStudent.avatar || ''} />}
+                      color="secondary"
+                      onDelete={() => setSelectedStudent('')}
+                    />
+                  </Grid>
+                )}
               </Grid>
-            </Grid>
 
-            <Grid container spacing={2} mb={2}>
-            {selectedAdmin && (
-  <Grid item>
-    <Chip
-      label={`Admin: ${selectedAdmin.name})`}
-      avatar={<Avatar src={selectedAdmin.avatar || ''} />}
-      color="primary"
-      onDelete={() => setSelectedAdmin('')}
-    />
-  </Grid>
-)}
-
-{selectedStudent && (
-  <Grid item>
-    <Chip
-      label={`Student: ${selectedStudent.name}`}
-      avatar={<Avatar src={selectedStudent.avatar || ''} />}
-      color="secondary"
-      onDelete={() => setSelectedStudent('')}
-    />
-  </Grid>
-)}
-            </Grid>
-
-            <StyledEditor
-              apiKey={apiKey}
-              value={complaint}
-              init={{
-                height: 400,
-                menubar: true,
-                plugins: [
-                  'image', 'advlist', 'autolink', 'lists', 'link', 'charmap', 'preview',
-                  'anchor', 'searchreplace', 'visualblocks', 'fullscreen', 'insertdatetime',
-                  'media', 'table', 'code', 'help', 'wordcount',
-                ],
-                toolbar:
-                  "undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image | removeformat | help",
-                content_style: "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                file_picker_callback: (callback) => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
-                  input.onchange = () => {
-                    const file = input.files[0];
-                    const reader = new FileReader();
-                    reader.onload = () => callback(reader.result, { alt: file.name });
-                    reader.readAsDataURL(file);
-                  };
-                  input.click();
-                },
-              }}
-              onEditorChange={handleChange}
-            />
-
-            <Divider sx={{ marginY: 2 }} />
-
-            <Grid container justifyContent="flex-end">
-              <SubmitButton variant="contained" onClick={handleSubmit}>
-                Submit Complaint
-              </SubmitButton>
-            </Grid>
-          </ComplaintContainer>
-        </Grid>
-
-        {/* Right: Complaint History */}
-        <Grid item xs={12} md={5}>
-      <ComplaintHistory elevation={2}>
-        <Typography variant="h6" gutterBottom>
-          Submitted Complaints
-        </Typography>
-
-        {complain?.length === 0 ? (
-          <Typography color="text.secondary" textAlign="center">
-            You have not submitted any complaints.
-          </Typography>
-        ) : (
-          <List>
-            {complain.map((complaint) => (
-              <ListItem key={complaint._id} alignItems="flex-start" divider>
-                <ListItemIcon>
-                <Tooltip
-          title={
-            complaint.status === "approved"
-              ? "Approved"
-              : complaint.status === "rejected"
-              ? "Rejected"
-              : "Pending"
-          }
-        >
-          <Badge
-            color={
-              complaint.status === "approved"
-                ? "success"
-                : complaint.status === "rejected"
-                ? "error"
-                : "warning"
-            }
-            variant="dot"
-          >
-            {complaint.status === "approved" ? (
-              <CheckCircle color="success" />
-            ) : complaint.status === "rejected" ? (
-              <Cancel color="error" />
-            ) : (
-              <HourglassEmpty color="warning" />
-            )}
-          </Badge>
-        </Tooltip>
-                </ListItemIcon>
-                <ListItemText
-        primary={
-          <Box display="flex" alignItems="center" gap={1}>
-            {complaint.referToStudent && (
-              <Avatar
-                src={complaint.referToStudent.avatar}
-                sx={{ width: 24, height: 24 }}
-              />
-            )}
-            <Typography variant="subtitle1" fontWeight="medium">
-              {complaint.referToStudent?.name || "No student referenced"}
-            </Typography>
-          </Box>
-        }
-        secondary={
-          <>
-            <Typography variant="body2" color="text.secondary">
-              {new Date(complaint.createdAt).toLocaleString()}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap={!open}>
-              <span
-                dangerouslySetInnerHTML={{
-                  __html: open
-                    ? complaint.content
-                    : `${complaint.content.slice(0, 60)}...`,
+              <StyledEditor
+                apiKey={apiKey}
+                value={complaint}
+                init={{
+                  height: 400,
+                  menubar: true,
+                  plugins: [
+                    'image', 'advlist', 'lists', 'link', 'preview', 'media', 'table', 'help', 'wordcount',
+                  ],
+                  toolbar: "undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | image | help",
+                  file_picker_callback: (callback) => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = () => {
+                      const file = input.files[0];
+                      const reader = new FileReader();
+                      reader.onload = () => callback(reader.result, { alt: file.name });
+                      reader.readAsDataURL(file);
+                    };
+                    input.click();
+                  },
                 }}
+                onEditorChange={(content) => setComplaint(content)}
               />
-            </Typography>
-          </>
-        }
-      />
-       <IconButton onClick={() => setOpen(!open)}>
-        {open ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-      </IconButton>
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </ComplaintHistory>
-    </Grid>
-      </Grid>
 
-      {/* Snackbar */}
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={5000}
-        onClose={() => setOpenSnackbar(false)}
-        message={snackbarMessage}
-      />
+              <Divider sx={{ my: 2 }} />
+              <Grid container justifyContent="flex-end">
+                <SubmitButton variant="contained" onClick={handleSubmit}>Submit Complaint</SubmitButton>
+              </Grid>
+            </ComplaintContainer>
+          </Grid>
+
+          {/* Complaint History */}
+          <Grid item xs={12} md={6} lg={5}>
+            <ComplaintHistory elevation={2}>
+              <Typography variant="h6" gutterBottom>Submitted Complaints</Typography>
+              {complainList.length === 0 ? (
+                <Typography color="text.secondary" textAlign="center">
+                  You have not submitted any complaints.
+                </Typography>
+              ) : (
+                <List>
+                  {complainList.map((c) => (
+                    <React.Fragment key={c._id}>
+                      <ListItem alignItems="flex-start" divider>
+                        <ListItemIcon>
+                          <Tooltip title={c.status}>
+                            <Badge
+                              color={
+                                c.status === "approved" ? "success" :
+                                  c.status === "rejected" ? "error" : "warning"
+                              }
+                              variant="dot"
+                            >
+                              {c.status === "approved" ? (
+                                <CheckCircle color="success" />
+                              ) : c.status === "rejected" ? (
+                                <Cancel color="error" />
+                              ) : (
+                                <HourglassEmpty color="warning" />
+                              )}
+                            </Badge>
+                          </Tooltip>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Box display="flex" alignItems="center" gap={1}>
+                              {c.referToStudent && (
+                                <Avatar src={c.referToStudent.avatar} sx={{ width: 24, height: 24 }} />
+                              )}
+                              <Typography variant="subtitle1" fontWeight="medium">
+                                {c.referToStudent?.name || "No student referenced"}
+                              </Typography>
+                            </Box>
+                          }
+                          secondary={
+                            <>
+                              <Typography variant="body2" color="text.secondary">
+                                {new Date(c.createdAt).toLocaleString()}
+                              </Typography>
+                              <Collapse in={expandedId === c._id}>
+                                <Typography variant="body2" color="text.secondary" dangerouslySetInnerHTML={{ __html: c.content }} />
+                              </Collapse>
+                            </>
+                          }
+                        />
+                        <IconButton onClick={() => setExpandedId(expandedId === c._id ? null : c._id)}>
+                          {expandedId === c._id ? <ExpandLess /> : <ExpandMore />}
+                        </IconButton>
+                      </ListItem>
+                    </React.Fragment>
+                  ))}
+                </List>
+              )}
+            </ComplaintHistory>
+          </Grid>
+        </Grid>
+      </Box>
 
       {/* Admin Dialog */}
       <Dialog open={openAdminDialog} onClose={() => setOpenAdminDialog(false)}>
-        <DialogTitle>Select an Admin</DialogTitle>
+        <DialogTitle>Select Admin</DialogTitle>
         <DialogContent>
-          
           <List>
             {admins.map((admin) => (
-               <ListItem key={admin._id} disablePadding>
-               <ListItemButton
-                 onClick={() => {
-                   setSelectedAdmin(admin);
-                   setOpenAdminDialog(false);
-                 }}
-               >
-                 <ListItemAvatar>
-                   <Avatar src={admin.avatar} alt={admin.name}>
-                     {admin.name[0].toUpperCase()}
-                   </Avatar>
-                 </ListItemAvatar>
-           
-                 <ListItemText
-                   primary={
-                     <Typography sx={{ fontWeight: 500 }}>
-                       {admin.name}
-                     </Typography>
-                   }
-                   secondary={
-                     <Typography variant="body2" color="textSecondary">
-                       {admin.email}
-                     </Typography>
-                   }
-                 />
-                
-               </ListItemButton>
-             </ListItem>
+              <ListItemButton key={admin._id} onClick={() => {
+                setSelectedAdmin(admin);
+                setOpenAdminDialog(false);
+              }}>
+                <ListItemAvatar><Avatar src={admin.avatar || ''} /></ListItemAvatar>
+                <ListItemText primary={admin.name} />
+              </ListItemButton>
             ))}
           </List>
         </DialogContent>
@@ -403,37 +307,17 @@ const ComplaintBox = () => {
 
       {/* Student Dialog */}
       <Dialog open={openStudentDialog} onClose={() => setOpenStudentDialog(false)}>
-        <DialogTitle>Select a Student</DialogTitle>
+        <DialogTitle>Select Student</DialogTitle>
         <DialogContent>
           <List>
             {students.map((student) => (
-              <ListItem disablePadding key={student}>
-                <ListItemButton
-                  onClick={() => {
-                    setSelectedStudent(student);
-                    setOpenStudentDialog(false);
-                  }}
-                >
-                   <ListItemAvatar>
-                   <Avatar src={student.avatar} alt={student.name}>
-                     {student.name[0].toUpperCase()}
-                   </Avatar>
-                 </ListItemAvatar>
-           
-                 <ListItemText
-                   primary={
-                     <Typography sx={{ fontWeight: 500 }}>
-                       {student.name}
-                     </Typography>
-                   }
-                   secondary={
-                     <Typography variant="body2" color="textSecondary">
-                       {student.email}
-                     </Typography>
-                   }
-                 />
-                </ListItemButton>
-              </ListItem>
+              <ListItemButton key={student._id} onClick={() => {
+                setSelectedStudent(student);
+                setOpenStudentDialog(false);
+              }}>
+                <ListItemAvatar><Avatar src={student.avatar || ''} /></ListItemAvatar>
+                <ListItemText primary={student.name} />
+              </ListItemButton>
             ))}
           </List>
         </DialogContent>
@@ -441,7 +325,14 @@ const ComplaintBox = () => {
           <Button onClick={() => setOpenStudentDialog(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={4000}
+        onClose={() => setOpenSnackbar(false)}
+        message={snackbarMessage}
+      />
     </div>
   );
 };

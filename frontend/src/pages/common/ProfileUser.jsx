@@ -5,6 +5,7 @@ import {
   Avatar,
   TextField,
   Button,
+  Box,
 } from '@mui/material';
 import moment from 'moment';
 import toast from 'react-hot-toast';
@@ -21,17 +22,12 @@ function getInstitutionAndRoleFromPath() {
 
 const ProfileUser = () => {
   const { institutions, role } = getInstitutionAndRoleFromPath();
-  console.log(institutions,role)
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [editData, setEditData] = useState({ name: '', avatar: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data, refetch, isError } = useGetUserProfileQuery({
-    subdomain: institutions,
-    role,
-  });
-
+  const { data, refetch, isError } = useGetUserProfileQuery({ subdomain: institutions, role });
   const info = data?.data;
 
   useEffect(() => {
@@ -40,20 +36,12 @@ const ProfileUser = () => {
     }
   }, [info]);
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex justify-center items-center h-screen bg-gray-50">
-  //       <CircularProgress size={40} />
-  //     </div>
-  //   );
-  // }
-
   useEffect(() => {
     if (isError || (data && !data?.data)) {
       toast.error(data?.message || 'Failed to load profile.');
     }
   }, [isError, data]);
-  
+
   if (isError || !data?.data) {
     return (
       <div className="flex justify-center items-center h-screen text-red-500 bg-gray-50">
@@ -120,14 +108,28 @@ const ProfileUser = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Leftbar />
-      <div className="flex-1 overflow-auto pl-0 md:pl-46 pr-4 md:pr-8 pt-32 pb-8">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
+      <Box
+        sx={{
+          width: 70,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          height: '100vh',
+          bgcolor: '#0e1c2f',
+          zIndex: 1100,
+          borderRight: '1px solid #1f2937',
+        }}
+      >
+        <Leftbar />
+      </Box>
+
+      <div className="flex-1 overflow-auto pl-[72px] px-4 pt-28 pb-8 w-full">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
 
           {/* Profile Info */}
-          <div className="w-full md:w-1/2 bg-white shadow-lg rounded-2xl p-8">
+          <div className="w-full lg:w-1/2 bg-white shadow-lg rounded-2xl p-6 sm:p-8">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-3xl font-semibold text-gray-900">Your Profile</h1>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">Your Profile</h1>
               <button
                 onClick={() => setIsEditing(!isEditing)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold"
@@ -136,7 +138,7 @@ const ProfileUser = () => {
               </button>
             </div>
 
-            <div className="flex justify-center pr-16 mb-6">
+            <div className="flex justify-center mb-6">
               <Avatar
                 alt={info.name}
                 src={info.avatar}
@@ -152,34 +154,25 @@ const ProfileUser = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-  <div className="flex items-center">
-    <InfoItem label="Name" value={info.name} />
-    <span className="ml-2 inline-flex items-center gap-1 bg-green-200 text-green-900 text-xs font-semibold px-3 py-1 rounded-full shadow-sm border border-green-300">
-      <svg
-        className="w-2 h-2 fill-green-600"
-        viewBox="0 0 8 8"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <circle cx="4" cy="4" r="4" />
-      </svg>
-      {info.role.charAt(0).toUpperCase() + info.role.slice(1)}
-    </span>
-  </div>
+              <div className="flex items-center">
+                <InfoItem label="Name" value={info.name} />
+                <span className="ml-2 inline-flex items-center gap-1 bg-green-200 text-green-900 text-xs font-semibold px-3 py-1 rounded-full shadow-sm border border-green-300">
+                  <svg className="w-2 h-2 fill-green-600" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" /></svg>
+                  {info.role.charAt(0).toUpperCase() + info.role.slice(1)}
+                </span>
+              </div>
 
               <InfoItem label="Email" value={info.email} />
               {info.rollnumber && <InfoItem label="Roll Number" value={info.rollnumber} />}
               <InfoItem label="Created At" value={moment(info.createdAt).format('MMMM D, YYYY')} />
+
               {info.role === 'student' && (
                 <>
                   <InfoItem label="Batch" value={info.batch} />
                   <InfoItem label="Department" value={info.department} />
                 </>
               )}
-              {info.role === 'teacher' && (
-                <>
-                  <InfoItem label="Department" value={info.department} />
-                </>
-              )}
+              {info.role === 'teacher' && <InfoItem label="Department" value={info.department} />}
               {info.role === 'parent' && (
                 <>
                   <InfoItem label="Parent of (Name)" value={info.parentofname} />
@@ -188,11 +181,11 @@ const ProfileUser = () => {
               )}
             </div>
 
-            <hr className="my-4 border-gray-200" />
+            <hr className="my-6 border-gray-200" />
 
             {info.institution && (
               <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-3">Institution</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Institution</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InfoItem label="Institution Name" value={info.institution.fullname} />
                   <InfoItem label="Email" value={info.institution.email} />
@@ -217,20 +210,20 @@ const ProfileUser = () => {
 
           {/* Edit Section */}
           {isEditing && (
-            <div className="w-full md:w-1/2 bg-white shadow-lg rounded-2xl p-8">
+            <div className="w-full lg:w-1/2 bg-white shadow-lg rounded-2xl p-6 sm:p-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Edit Profile</h2>
 
               <div className="flex justify-center items-center mb-6 relative">
                 <Avatar
                   alt={editData.name}
                   src={selectedAvatar || editData.avatar || info.avatar}
-                  sx={{ width: 120, height: 120, fontSize: 40, bgcolor: "transparent" }}
+                  sx={{ width: 120, height: 120, fontSize: 40 }}
                 >
                   {!selectedAvatar && !editData.avatar && editData.name?.[0]?.toUpperCase()}
                 </Avatar>
                 <label
                   htmlFor="avatar-upload"
-                  className="absolute right-30 top-28 w-8 h-8 bg-white border-blue-500 rounded-full flex items-center justify-center text-blue-500 cursor-pointer"
+                  className="absolute right-[calc(50%-60px)] top-[90px] w-8 h-8 bg-white border-blue-500 rounded-full flex items-center justify-center text-blue-500 cursor-pointer"
                 >
                   📷
                 </label>
@@ -243,13 +236,13 @@ const ProfileUser = () => {
                 />
               </div>
               {selectedAvatar && (
-                <button className="text-red-600 text-sm mt-2" onClick={handleResetAvatar}>
+                <button className="text-red-600 text-sm mt-2 mb-4 text-center block" onClick={handleResetAvatar}>
                   Reset Avatar
                 </button>
               )}
 
-              <div className="flex flex-col mb-6">
-                <label className="text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <div className="mb-6">
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Full Name</label>
                 <TextField
                   fullWidth
                   value={editData.name}
@@ -260,16 +253,17 @@ const ProfileUser = () => {
                 />
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={handleSave}
                   disabled={isLoading}
+                  fullWidth
                 >
                   {isLoading ? <CircularProgress size={24} /> : 'Save Changes'}
                 </Button>
-                <Button variant="outlined" color="secondary" onClick={handleCancel}>
+                <Button variant="outlined" color="secondary" onClick={handleCancel} fullWidth>
                   Cancel
                 </Button>
               </div>
@@ -285,7 +279,7 @@ const ProfileUser = () => {
 const InfoItem = ({ label, value }) => (
   <div className="mb-4">
     <h4 className="text-sm font-medium text-gray-600">{label}</h4>
-    <p className="text-base text-gray-800">{value || 'N/A'}</p>
+    <p className="text-base text-gray-800 break-words">{value || 'N/A'}</p>
   </div>
 );
 

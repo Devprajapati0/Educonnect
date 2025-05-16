@@ -663,27 +663,47 @@ useEffect(() => {
 
 
   return (
-   <>
+    <>
+
  {isChatSelected && (
   <Box
-    display="flex"
-    alignItems="center"
-    padding={1}
-    bgcolor="#111827"
-    onClick={() => setOpenInfo(true)} // ✅
-    sx={{ cursor: "pointer" }}
-  >
-    {!chatfetchLoading ? (
-      <>
-        <Avatar src={avatars.image || ""} sx={{ width: 35, height: 35, mr: 2 }} />
-        <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
-          {avatars.name || "unidentified"}
-        </Typography>
-      </>
-    ) : (
-      <Loader />
-    )}
-  </Box>
+  display="flex"
+  alignItems="center"
+  padding={1}
+  bgcolor="#111827"
+  onClick={() => setOpenInfo(true)}
+  sx={{
+    cursor: "pointer",
+    flexDirection: { xs: "column", sm: "row" }, // Stack on small screens
+    textAlign: { xs: "center", sm: "left" }, // Center text on small screens
+    gap: 1.5, // Adds consistent spacing
+  }}
+>
+  {!chatfetchLoading ? (
+    <>
+      <Avatar
+        src={avatars.image || ""}
+        sx={{
+          width: { xs: 40, sm: 35 },
+          height: { xs: 40, sm: 35 },
+        }}
+      />
+      <Typography
+        variant="h6"
+        sx={{
+          color: "white",
+          fontWeight: "bold",
+          fontSize: { xs: "1rem", sm: "1.1rem" }, // Adjust font size
+          mt: { xs: 0.5, sm: 0 }, // Margin top on small screens when stacked
+        }}
+      >
+        {avatars.name || "unidentified"}
+      </Typography>
+    </>
+  ) : (
+    <Loader />
+  )}
+</Box>
 )}
 
 <ChatInfoDialog
@@ -857,7 +877,7 @@ useEffect(() => {
       </>
 
       ) : (
-        <Box sx={{ textAlign: "center", px: 2 }}>
+        <Box sx={{ textAlign: "center", px: 2,mt:{xs: 10,md:30, lg:50} }}>
           <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem", color: "#333" }}>
             👋 Welcome to <span style={{ color: "#3b82f6" }}>{institution}</span>
           </h1>
@@ -868,6 +888,7 @@ useEffect(() => {
       )}
     </Fragment>
 
+  
    </>
   )
 }

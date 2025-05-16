@@ -8,12 +8,13 @@ import {
   CardHeader,
   Box,
   CircularProgress,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material"
 import BusinessIcon from "@mui/icons-material/Business"
 import toast from "react-hot-toast"
 import { useAddRoleSignupMutation } from "../../store/api/api"
 import Leftbar from "../common/Leftbar"
-
 
 function getSubdomainName() {
   const pathname = window.location.pathname
@@ -38,6 +39,9 @@ const departments = [
 ]
 
 function Adduser() {
+  const theme = useTheme()
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"))
+
   const [
     addRoleSignupMutation,
     { isLoading: isAddRoleSignupLoading, isError: isAddRoleSignupError, error: addRoleSignupError },
@@ -129,7 +133,6 @@ function Adduser() {
         parentofemail: "",
         parentofname: "",
         avatar: null,
-        
       })
       setAvatar(null)
     } catch (err) {
@@ -139,7 +142,6 @@ function Adduser() {
 
   return (
     <>
-      {/* Full-screen loader overlay */}
       {isAddRoleSignupLoading && (
         <Box
           sx={{
@@ -159,172 +161,130 @@ function Adduser() {
         </Box>
       )}
 
-      <Box sx={{ display: "flex" }}>
-        <Leftbar />
+      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+        {/* Fixed Leftbar */}
+        <Box
+          sx={{
+            width: { xs: 60, sm: 70 },
+            flexShrink: 0,
+            height: "100vh",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            bgcolor: "#0e1c2f",
+            borderRight: "1px solid #1f2937",
+            zIndex: 1100,
+          }}
+        >
+          <Leftbar />
+        </Box>
 
-        <Card className="max-w-xl mx-auto mt-10 shadow-lg">
-          <CardHeader
-            title="Signup"
-            subheader="Create your account"
-            className="text-center"
-            style={{ backgroundColor: "#f5f5f5" }}
-          />
-          <CardContent>
-            <Box className="flex flex-col items-center mb-6">
-              <div
-                className="w-24 h-24 rounded-full border-4 border-gray-300 overflow-hidden shadow-md cursor-pointer relative group"
-                onClick={handleUploadClick}
-              >
-                {avatar ? (
-                  <img
-                    src={avatar}
-                    alt="avatar"
-                    className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-80"
+        <Box
+  sx={{
+    flexGrow: 1,
+    ml: { xs: '60px', sm: '70px' },
+    p: { xs: 1, sm: 2 },
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start",
+    minHeight: "100vh",
+    width: "100%",
+  }}
+>
+          <Card sx={{ width: "100%", maxWidth: 500 }}>
+            <CardHeader
+              title="Signup"
+              subheader="Create your account"
+              sx={{ textAlign: "center", backgroundColor: "#f5f5f5" }}
+            />
+            <CardContent>
+              <Box className="flex flex-col items-center mb-6">
+                <div
+                  className="w-24 h-24 rounded-full border-4 border-gray-300 overflow-hidden shadow-md cursor-pointer relative group"
+                  onClick={handleUploadClick}
+                >
+                  {avatar ? (
+                    <img
+                      src={avatar}
+                      alt="avatar"
+                      className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-80"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400 text-3xl">
+                      <BusinessIcon fontSize="inherit" />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                    className="hidden"
                   />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400 text-3xl">
-                    <BusinessIcon fontSize="inherit" />
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </div>
-              <Button onClick={handleUploadClick} size="small" variant="outlined" className="mt-2">
-                {avatar ? "Change avatar" : "Upload avatar"}
-              </Button>
-            </Box>
+                </div>
+                <Button onClick={handleUploadClick} size="small" variant="outlined" className="mt-2">
+                  {avatar ? "Change avatar" : "Upload avatar"}
+                </Button>
+              </Box>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <TextField
-                name="name"
-                label="Full Name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                fullWidth
-                variant="outlined"
-                size="small"
-              />
-              <TextField
-                name="rollnumber"
-                label="Roll Number"
-                value={formData.rollnumber}
-                onChange={handleInputChange}
-                required
-                fullWidth
-                variant="outlined"
-                size="small"
-              />
-              <TextField
-                name="email"
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                fullWidth
-                variant="outlined"
-                size="small"
-              />
-              <TextField
-                name="password"
-                label="Password"
-                type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-                fullWidth
-                variant="outlined"
-                size="small"
-              />
-              <TextField
-                select
-                name="role"
-                label="User Role"
-                value={formData.role}
-                onChange={handleInputChange}
-                required
-                fullWidth
-                variant="outlined"
-                size="small"
-              >
-                {roles.map((role) => (
-                  <MenuItem key={role.value} value={role.value}>
-                    {role.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              {/* Role-specific fields */}
-              {formData.role === "student" && (
-                <TextField
-                  name="batch"
-                  label="Batch"
-                  value={formData.batch}
-                  onChange={handleInputChange}
-                  required
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                />
-              )}
-
-              {formData.role === "teacher" && (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <TextField name="name" label="Full Name" value={formData.name} onChange={handleInputChange} required fullWidth size="small" />
+                <TextField name="rollnumber" label="Roll Number" value={formData.rollnumber} onChange={handleInputChange} required fullWidth size="small" />
+                <TextField name="email" label="Email" type="email" value={formData.email} onChange={handleInputChange} required fullWidth size="small" />
+                <TextField name="password" label="Password" type="password" value={formData.password} onChange={handleInputChange} required fullWidth size="small" />
                 <TextField
                   select
-                  name="department"
-                  label="Department"
-                  value={formData.department}
+                  name="role"
+                  label="User Role"
+                  value={formData.role}
                   onChange={handleInputChange}
                   required
                   fullWidth
-                  variant="outlined"
                   size="small"
                 >
-                  {departments.map((dept) => (
-                    <MenuItem key={dept} value={dept.toLowerCase()}>
-                      {dept}
+                  {roles.map((role) => (
+                    <MenuItem key={role.value} value={role.value}>
+                      {role.label}
                     </MenuItem>
                   ))}
                 </TextField>
-              )}
 
-              {formData.role === "parent" && (
-                <>
+                {/* Role-specific fields */}
+                {formData.role === "student" && (
+                  <TextField name="batch" label="Batch" value={formData.batch} onChange={handleInputChange} required fullWidth size="small" />
+                )}
+                {formData.role === "teacher" && (
                   <TextField
-                    name="parentofemail"
-                    label="Student's Email (Parent Of)"
-                    value={formData.parentofemail}
+                    select
+                    name="department"
+                    label="Department"
+                    value={formData.department}
                     onChange={handleInputChange}
                     required
                     fullWidth
-                    variant="outlined"
                     size="small"
-                  />
-                  <TextField
-                    name="parentofname"
-                    label="Student's Name (Parent Of)"
-                    value={formData.parentofname}
-                    onChange={handleInputChange}
-                    required
-                    fullWidth
-                    variant="outlined"
-                    size="small"
-                  />
-                </>
-              )}
+                  >
+                    {departments.map((dept) => (
+                      <MenuItem key={dept} value={dept.toLowerCase()}>
+                        {dept}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+                {formData.role === "parent" && (
+                  <>
+                    <TextField name="parentofemail" label="Student's Email" value={formData.parentofemail} onChange={handleInputChange} required fullWidth size="small" />
+                    <TextField name="parentofname" label="Student's Name" value={formData.parentofname} onChange={handleInputChange} required fullWidth size="small" />
+                  </>
+                )}
 
-              <Button type="submit" variant="contained" fullWidth size="large">
-                Sign Up
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                <Button type="submit" variant="contained" fullWidth size="large">
+                  Sign Up
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </Box>
       </Box>
     </>
   )

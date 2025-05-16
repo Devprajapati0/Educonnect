@@ -96,74 +96,84 @@ const Adminchat = () => {
   // }
 
   return (
-   <Box className="h-screen flex" >
-  <Grid container sx={{width:"100%", height: "100%" }}>
+    
+<Box className="flex flex-row min-h-screen bg-gray-100">
+  {/* LEFTBAR fixed to left side */}
+  <Box
+    sx={{
+      width: 70, // match with Leftbar width
+      position: "fixed",
+      top: 0,
+      left: 0,
+      height: "100vh",
+      bgcolor: "#0e1c2f",
+      zIndex: 1100, // keep it on top
+      borderRight: "1px solid #1f2937",
+    }}
+  >
+    <Leftbar />
+  </Box>
 
-    <Grid item sx={{ width: 80, backgroundColor: "#0e1c2f" }}>
-      <Leftbar />
-    </Grid>
-
+  {/* MAIN GRID - shifted right to make space for Leftbar */}
+  <Box sx={{ marginLeft: "50px", flex: 1, width: "calc(100% - 70px)", display: "flex" }}>
     {/* CHAT LIST */}
     <Grid
-            item
-            sm={4}
-            md={3}
-            lg={2}
-            sx={{
-              display: { xs: "none", sm: "block" },
-              bgcolor: "#f5f5f5",
-              p: 1,
-              borderRight: "1px solid #ccc",
-              overflowY: "auto",
-            }}
-          >
-          {
-            isLoading ? (
-              <div style={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <CircularProgress />
-              </div>
-            ) : isError ? (
-              <div style={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <p>Error loading chats</p>
-              </div>
-            ) : (
-              <div style={{ height: "100%", overflowY: "auto" }}>
-                <ChatList
-                  categorizedChats={chats}
-                  flag={flag}
-                  setFlag={setFlag}
-                  newMessageAlert={AlertData.newMessageAlert}
-                  categories={categories}
-                  onlineUsers={onlineUsers}
-                  refetch={refetch}
-                />
-              </div>
-            )
-          }
-      
+      item
+
+      md={2}
+      lg={4}
+      sx={{
+        bgcolor: "#f5f5f5",
+        p: 1,
+        borderRight: "1px solid #ccc",
+        overflowY: "auto",
+        height: "100vh",
+      }}
+    >
+      {isLoading ? (
+        <Box height="100%" display="flex" justifyContent="center" alignItems="center">
+          <CircularProgress />
+        </Box>
+      ) : isError ? (
+        <Box height="100%" display="flex" justifyContent="center" alignItems="center">
+          <p>Error loading chats</p>
+        </Box>
+      ) : (
+        <Box height="100%" overflow="auto">
+          <ChatList
+            categorizedChats={chats}
+            flag={flag}
+            setFlag={setFlag}
+            newMessageAlert={AlertData.newMessageAlert}
+            categories={categories}
+            onlineUsers={onlineUsers}
+            refetch={refetch}
+          />
+        </Box>
+      )}
     </Grid>
 
     {/* CHAT AREA */}
     <Grid
-            item
-            xs={12}
-            sm={8}
-            md={9}
-            lg={10}
-            sx={{
-              bgcolor: "#ffffff",
-              display: "flex",
-              flexDirection: "column",
-              height: "100%",
-              overflow: "hidden",
-            }}
-          >
-      <Chat 
-        socket={socket} refetch={refetch}
-       />
+      item
+  
+     
+      md={10}
+      lg={8}
+      sx={{
+        bgcolor: "#ffffff",
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        overflow: "auto",
+        width: "100%",
+      }}
+    >
+      <Chat socket={socket} refetch={refetch} />
     </Grid>
-  </Grid>
+  </Box>
 </Box>
+
   )
 }
 

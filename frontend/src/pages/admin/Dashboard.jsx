@@ -20,7 +20,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import SchoolIcon from '@mui/icons-material/School';
 import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
-import EmojiPeopleIcon from '@mui/icons-material/EmojiPeople';
+import { useMediaQuery } from '@mui/material';
 
 const getInstitutionAndRoleFromPath = () => {
   const pathname = window.location.pathname;
@@ -55,6 +55,7 @@ const Widget = ({ title, value, Icon }) => (
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const isMobile = useMediaQuery(theme => theme.breakpoints.down('md'));
   const { institution, role } = getInstitutionAndRoleFromPath();
   const { data, isLoading } = useGetDashboardStatsQuery({ subdomain: institution, role });
   console.log('Dashboard data:', data);
@@ -72,76 +73,153 @@ const Dashboard = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Leftbar />
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+<Box width="100%" className="min-h-screen bg-gray-100 flex flex-row">
+       <Box
+        sx={{
+          width: 70, // match with Leftbar width
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          height: '100vh',
+          bgcolor: '#0e1c2f',
+          zIndex: 1100, // keep it on top
+          borderRight: '1px solid #1f2937',
+        }}
+      >
+        <Leftbar />
+      </Box>
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: { xs: 1, sm: 2, md: 3 },
+          marginLeft: { xs: 0, md: '70px',lg:'70px' }, // Adjust margin for Leftbar
+          width: '100%',
+          display: 'flex',
+        }}
+      >
         {isLoading ? (
           <Skeleton variant="rectangular" height="90vh" />
         ) : (
-          <Container maxWidth="xl">
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
-              <Typography variant="h4" fontWeight="bold">📊 Admin Dashboard</Typography>
-              <Typography variant="subtitle2" color="gray">
-                {moment().format('dddd, D MMMM YYYY')}
-              </Typography>
-            </Stack>
+          <Container
+          maxWidth="xl"
+          sx={{
+            flexGrow: 1,
+            p: { xs: 0.5, sm: 2 },
+            marginLeft: { xs: 8, sm: 10, md: 5,lg:5 }, // Adjust margin for Leftbar
+            overflowY: 'auto',
+            width: '100%',
+          }}
+        >
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            mb={4}
+            spacing={2}
+          >
+            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
+              📊 Admin Dashboard
+            </Typography>
+            <Typography variant="subtitle2" color="gray">
+              {moment().format('dddd, D MMMM YYYY')}
+            </Typography>
+          </Stack>
 
-            <Stack direction="row" spacing={2} mb={4}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            mb={4}
+            
+            sx={{ width: '100%' }}
+          >
             <Button
-  variant="contained"
-  onClick={() => navigate(`/${institution}/${role}/dashboard/users`)}
->
-  Users
-</Button>
+              variant="contained"
+              fullWidth={isMobile}
+              onClick={() => navigate(`/${institution}/${role}/dashboard/users`)}
+            >
+              Users
+            </Button>
+            <Button
+              variant="contained"
+              fullWidth={isMobile}
+              onClick={() => navigate(`/${institution}/${role}/dashboard/chats`)}
+            >
+              Chats
+            </Button>
+          </Stack>
 
-<Button
-  variant="contained"
-  onClick={() => navigate(`/${institution}/${role}/dashboard/chats`)}
->
-  Chats
-</Button>
-            </Stack>
+          {/* Overview Widgets */}
+          <Grid container spacing={2} mb={4} mt={2}>
+            <Grid item xs={12} sm={4} md={3}><Widget title="Total Users" value={stats.totalUsers} Icon={<PersonIcon />} /></Grid>
+            <Grid item xs={12} sm={4} md={3}><Widget title="Messages" value={stats.totalMessages} Icon={<MessageIcon />} /></Grid>
+            <Grid item xs={12} sm={4} md={3}><Widget title="Admins" value={stats.totalAdmins} Icon={<AdminPanelSettingsIcon />} /></Grid>
+            <Grid item xs={12} sm={4} md={3}><Widget title="Teachers" value={stats.totalTeachers} Icon={<SchoolIcon />} /></Grid>
+            <Grid item xs={12} sm={4} md={3}><Widget title="Parents" value={stats.totalParents} Icon={<FamilyRestroomIcon />} /></Grid>
+            <Grid item xs={12} sm={4} md={3}><Widget title="Students" value={stats.totalStudents} Icon={<PersonIcon />} /></Grid>
+          </Grid>
 
-            {/* Overview Widgets */}
-            <Grid container spacing={3} mb={4}>
-              <Grid item xs={12} sm={6} md={3}><Widget title="Total Users" value={stats.totalUsers} Icon={<PersonIcon />} /></Grid>
-              
-              <Grid item xs={12} sm={6} md={3}><Widget title="Messages" value={stats.totalMessages} Icon={<MessageIcon />} /></Grid>
-      
-              <Grid item xs={12} sm={6} md={3}><Widget title="Admins" value={stats.totalAdmins} Icon={<AdminPanelSettingsIcon />} /></Grid>
-              <Grid item xs={12} sm={6} md={3}><Widget title="Teachers" value={stats.totalTeachers} Icon={<SchoolIcon />} /></Grid>
-              <Grid item xs={12} sm={6} md={3}><Widget title="Parents" value={stats.totalParents} Icon={<FamilyRestroomIcon />} /></Grid>
-              <Grid item xs={12} sm={6} md={3}><Widget title="Students" value={stats.totalStudents} Icon={<PersonIcon />} /></Grid>
-            </Grid>
-
-            {/* Charts Section */}
-            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={4} justifyContent="center" alignItems="stretch" flexWrap="wrap">
-              <Paper elevation={3} sx={{ flex: 1, p: 3, minWidth: 300, borderRadius: '1rem' }}>
-                <Typography variant="h6" gutterBottom>Last 7 Days Messages</Typography>
+          {/* Charts Section */}
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={2}
+            alignItems="stretch"
+            flexWrap="wrap"
+            mt={2}
+            gap={2}
+            marginLeft={{ xs: 0,sm:10, md: '70px',lg:'70px' }} // Adjust margin for Leftbar
+          >
+            {/* Line Chart */}
+            <Paper
+              elevation={3}
+              sx={{
+                flex: 1,
+                p: 2,
+                minWidth: { xs: '100%', sm: 200 },
+                maxWidth: { md: '100%', lg: '48%' },
+                borderRadius: '1rem',
+                mb: { xs: 2, md: 0 },
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Last 7 Days Messages
+              </Typography>
+              <Box sx={{height: { xs: 180, sm: 220, md: 250, lg: 300 }}}>
                 <LineChart value={stats.messagesLast7Days} />
-              </Paper>
+              </Box>
+            </Paper>
 
-              <Paper
-  elevation={3}
-  sx={{
-    flex: 1,
-    p: 3,
-    minWidth: 300,
-    maxWidth: 360,
-    borderRadius: '1rem',
-    position: 'relative',
-    height: 360, // ✅ Add height
-  }}
->
-                <Typography variant="h6" gutterBottom>Chat Types</Typography>
+            {/* Doughnut Chart */}
+            <Paper
+              elevation={3}
+              sx={{
+                flex: 1,
+                p: 2,
+                minWidth: { xs: '100%', sm: 300 },
+                maxWidth: { md: '100%', lg: 360 },
+                borderRadius: '1rem',
+                height: { xs: 300, sm: 340, md: 360 },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+             
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Chat Types
+              </Typography>
+              <Box sx={{ flex: 1 }}>
                 <DoughnutChart
-  labels={["Group Chats", "Individual Chats"]}
-  value={[stats.totalGroups || 0, stats.totalPrivateChats || 0]}
-/>
-              </Paper>
-            </Stack>
-          </Container>
-        )}
+                  labels={['Group Chats', 'Individual Chats']}
+                  value={[stats.totalGroups || 0, stats.totalPrivateChats || 0]}
+                />
+              </Box>
+            </Paper>
+          </Stack>
+        </Container>
+      )}
       </Box>
     </Box>
   );

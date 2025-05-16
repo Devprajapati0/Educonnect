@@ -53,7 +53,7 @@ const Leftbar = () => {
   return (
     <Box
       sx={{
-        width: 80,
+      
         height: "100vh",
         bgcolor: "#111827",
         color: "white",
