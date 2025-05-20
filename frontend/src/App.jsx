@@ -27,6 +27,7 @@ const Users = lazy(() => import('./pages/admin/Users.jsx'))
 const Chats = lazy(() => import('./pages/admin/Chats.jsx'))
 const Complain = lazy(() => import('./pages/common/Complain.jsx'))
 const ComplainPortal = lazy(() => import('./pages/admin/ComplainPortal.jsx'))
+const ForgotInstituitonPassword = lazy(() => import('./pages/instituiton/Forgotpassword.jsx'))
 
 // const Adminchat = lazy(() => import('./pages/admin/Adminchat.jsx'))
 const App = () => {
@@ -50,10 +51,11 @@ const App = () => {
             <Route path="/signup" element={<Signup />} />
             <Route path="/success" element={<Success />} />
             <Route path='/login' element={<Login />} />
+            <Route path='/forgotpassword' element={<ForgotInstituitonPassword />} />
             <Route path="/profile" element={<InstituteProtectRoute />}>
-  <Route index element={<Profile />} />
-  <Route path="edit" element={<Edit />} />
-</Route>
+            <Route index element={<Profile />} />
+            <Route path="edit" element={<Edit />} />
+          </Route>
 
             <Route path = '/:subdomain/login' element={<Frontpage/>}/>
             <Route path = '/:subdomain/forgot-password' element={<Forgotpassword/>}/>

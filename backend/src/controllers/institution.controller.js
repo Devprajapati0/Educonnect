@@ -465,7 +465,38 @@ const updateProfile = asynhandler(async (req, res) => {
     new apiresponse(200,institute, 'Institute profile updated successfully.')
   );
 });
+
+const ForgotPassword = asynhandler(async(req,res) => {
+  try {
+    const {subdomain,email,password} = req.body;
+   console.log("subdomain",req.body)
+    if(!subdomain || !email || !password){
+        return res.json(
+            new apiresponse(400, null, "All fields are required")
+        );
+    }
+
+
+    const institute = await Institution.findOne({subdomain,email});
+    if(!institute){
+        return res.json(
+            new apiresponse(400, null, "No account found with this email and subdomain")
+        );
+    }
+    institute.password = await bcrypt.hash(password, 10);
+    await institute.save();
+    return res.json(
+        new apiresponse(200, null, "Password updated successfully")
+    )
+
+  } catch (error) {
+    console.error(error);
+    return res.json(
+        new apiresponse(500, null, "Server error during password reset")
+    );
+  }
+})
  
 
 
-export { uniqueInstitutionSubdomain,checkOutSession,checkoutSuccess,institutionSignup,institutionLogin,instituteLogout,instituteProfile,updateProfile }
+export { uniqueInstitutionSubdomain,checkOutSession,checkoutSuccess,institutionSignup,institutionLogin,instituteLogout,instituteProfile,updateProfile,ForgotPassword }

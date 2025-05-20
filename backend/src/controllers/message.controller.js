@@ -232,8 +232,63 @@ const getChatMediaController = asynhandler(async (req, res) => {
   return res.json(new apiresponse(200, mediaMessages, "Media messages fetched successfully"));
 });
 
+// Step 5: Delete Message
+const deleteMessageController = asynhandler(async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json(new apiresponse(401, null, "Unauthorized"));
+    }
+
+    if (!messageId || messageId === 'undefined') {
+      return res.status(400).json(new apiresponse(400, null, "Message ID is required"));
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json(new apiresponse(400, null, "Invalid Message ID format"));
+    }
+
+    // Step 1: Fetch the message along with chat and institution references
+    const message = await Message.findById(messageId)
+      .populate("chat", "members") // only fetch members from chat
+      .populate("institution", "_id")
+      .lean();
+
+    if (!message) {
+      return res.status(404).json(new apiresponse(404, null, "Message not found"));
+    }
+
+    // Step 2: Institution Check
+    if (
+      message.institution?._id?.toString() !== user.institution?._id?.toString()
+    ) {
+      return res.status(403).json(new apiresponse(403, null, "Access denied"));
+    }
+
+    // Step 3: Membership Check
+    const isMember = message.chat.members.some(
+      (member) => member.toString() === user._id.toString()
+    );
+
+    if (!isMember) {
+      return res.status(403).json(new apiresponse(403, null, "You are not a member of this chat"));
+    }
+
+    // Step 4: Delete the message
+    await Message.findByIdAndDelete(messageId);
+
+    return res.status(200).json(new apiresponse(200, null, "Message deleted successfully"));
+  } catch (error) {
+    console.error("deleteMessageController error:", error);
+    return res.status(500).json(new apiresponse(500, null, "Internal Server Error"));
+  }
+});
+
 export {
     sendMessageController,
     getIndividualMessageController,
     getChatMediaController
 }
+

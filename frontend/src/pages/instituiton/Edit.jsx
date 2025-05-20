@@ -9,9 +9,17 @@ import {
   TextField,
   Button,
   Typography,
-  MenuItem
+  MenuItem,
+  Paper,
+  Container,
+  Grid,
+  Avatar,
+  Box,
+  Divider,
+  IconButton,
+  Tooltip
 } from '@mui/material'
-import { Business } from '@mui/icons-material'
+import { Business, PhotoCamera, ArrowBack, Save } from '@mui/icons-material'
 import toast from 'react-hot-toast'
 import Header from './Header'
 
@@ -100,155 +108,244 @@ const EditInstitutionProfile = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
-        <CircularProgress size={40} />
-      </div>
+      <Box className="flex justify-center items-center h-screen bg-gray-50">
+        <CircularProgress size={60} thickness={4} className="text-indigo-600" />
+      </Box>
     )
   }
 
   if (isError || !data?.data?.institute) {
     toast.error(data?.message || 'Failed to fetch profile data')
     return (
-      <div className="flex justify-center items-center h-screen text-red-500 bg-gray-50">
-        Failed to load profile.
-      </div>
+      <Box className="flex flex-col justify-center items-center h-screen bg-gray-50">
+        <Typography variant="h5" className="text-red-500 mb-4">Failed to load profile</Typography>
+        <Button 
+          variant="contained" 
+          startIcon={<ArrowBack />} 
+          onClick={() => navigate('/')}
+        >
+          Return to Dashboard
+        </Button>
+      </Box>
     )
   }
 
-  return (<>
+  return (
+    <>
+      <Header />
+      <Box className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-gray-100 py-10 px-4">
+        <Container maxWidth="md">
+          <Paper elevation={3} className="rounded-xl overflow-hidden">
+            {/* Header Section */}
+            <Box className="bg-gradient-to-r from-blue-600 to-indigo-700 py-6 px-6 sm:px-10">
+              <Typography variant="h4" className="text-white font-medium">
+                Edit Institution Profile
+              </Typography>
+              <Typography variant="body1" className="text-blue-100 mt-1">
+                Update your institution's information and settings
+              </Typography>
+            </Box>
 
-    <Header />
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-gray-100 py-10 px-4 flex justify-center items-start">
-      <div className="w-full max-w-3xl bg-white shadow-xl rounded-2xl p-6 sm:p-8 md:p-10 border border-gray-200">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-center text-gray-800 mb-6 md:mb-10">
-          Edit Institution Profile
-        </h1>
+            <Box className="px-6 py-8 sm:p-10">
+              {/* Logo Upload Section */}
+              <Box className="flex flex-col items-center mb-10">
+                <Box className="relative">
+                  <Avatar
+                    src={image}
+                    className="w-32 h-32 border-4 border-white shadow-lg bg-gray-100"
+                    sx={{ width: 130, height: 130 }}
+                  >
+                    {!image && <Business sx={{ fontSize: 60 }} className="text-gray-400" />}
+                  </Avatar>
+                  <Tooltip title="Change Logo" arrow>
+                    <IconButton
+                      className="absolute bottom-0 right-0 bg-white shadow-md hover:bg-gray-100 border border-gray-200"
+                      onClick={handleUploadClick}
+                      size="small"
+                      sx={{ 
+                        padding: '8px',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      <PhotoCamera className="text-indigo-600" fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    ref={fileInputRef}
+                    className="hidden"
+                  />
+                </Box>
+                <Typography variant="body2" className="mt-2 text-gray-500">
+                  Click on the camera icon to upload a new logo
+                </Typography>
+              </Box>
 
-        {/* Logo Upload Section */}
-        <div className="flex flex-col items-center gap-3 mb-8 sm:mb-10">
-          <div
-            className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-gray-300 overflow-hidden shadow-md cursor-pointer relative group"
-            onClick={handleUploadClick}
-          >
-            {image ? (
-              <img
-                src={image}
-                alt="Institution Logo"
-                className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-80"
-              />
-            ) : (
-              <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400 text-4xl">
-                <Business fontSize="inherit" />
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              ref={fileInputRef}
-              className="hidden"
-            />
-          </div>
-          <Button variant="text" size="small" onClick={handleUploadClick}>
-            {image ? 'Change Logo' : 'Upload Logo'}
-          </Button>
-        </div>
+              {/* Form Section */}
+              <Box component="form" onSubmit={handleSubmit}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Institution Name"
+                      name="fullname"
+                      value={form.fullname}
+                      onChange={handleChange('fullname')}
+                      required
+                      fullWidth
+                      variant="outlined"
+                      InputProps={{
+                        className: "rounded-lg"
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Email Address"
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange('email')}
+                      required
+                      fullWidth
+                      variant="outlined"
+                      InputProps={{
+                        className: "rounded-lg"
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      select
+                      label="Institution Type"
+                      name="type"
+                      value={form.type}
+                      onChange={handleChange('type')}
+                      required
+                      fullWidth
+                      variant="outlined"
+                      InputProps={{
+                        className: "rounded-lg"
+                      }}
+                    >
+                      <MenuItem value="school">School</MenuItem>
+                      <MenuItem value="university">University/College</MenuItem>
+                      <MenuItem value="other">Other Educational Institution</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Subdomain"
+                      name="subdomain"
+                      value={form.subdomain}
+                      fullWidth
+                      disabled
+                      variant="outlined"
+                      helperText="Subdomain cannot be changed"
+                      InputProps={{
+                        className: "rounded-lg bg-gray-50"
+                      }}
+                    />
+                  </Grid>
+                </Grid>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
-          <TextField
-            label="Full Name"
-            name="fullname"
-            value={form.fullname}
-            onChange={handleChange('fullname')}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange('email')}
-            required
-            fullWidth
-          />
-          <TextField
-            select
-            label="Institution Type"
-            name="type"
-            value={form.type}
-            onChange={handleChange('type')}
-            required
-            fullWidth
-          >
-            <MenuItem value="school">School</MenuItem>
-            <MenuItem value="university">University/College</MenuItem>
-            <MenuItem value="other">Other</MenuItem>
-          </TextField>
-          <TextField
-            label="Subdomain"
-            name="subdomain"
-            value={form.subdomain}
-            fullWidth
-            disabled
-          />
+                {/* Password Section */}
+                <Box className="mt-12 mb-6">
+                  <Divider>
+                    <Typography variant="h6" className="font-medium text-gray-700 px-3">
+                      Security Settings
+                    </Typography>
+                  </Divider>
+                </Box>
 
-          {/* Password Section */}
-          <div className="pt-6 border-t border-gray-200">
-            <Typography variant="h6" gutterBottom className="text-gray-700 mb-2">
-              Change Password
-            </Typography>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <TextField
-                label="Current Password"
-                type="password"
-                value={passwords.current}
-                onChange={handlePasswordChange('current')}
-                fullWidth
-                autoComplete="current-password"
-              />
-              <TextField
-                label="New Password"
-                type="password"
-                value={passwords.new}
-                onChange={handlePasswordChange('new')}
-                fullWidth
-                autoComplete="new-password"
-              />
-              <TextField
-                label="Confirm New Password"
-                type="password"
-                value={passwords.confirm}
-                onChange={handlePasswordChange('confirm')}
-                fullWidth
-                autoComplete="new-password"
-              />
-            </div>
-          </div>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="Current Password"
+                      type="password"
+                      value={passwords.current}
+                      onChange={handlePasswordChange('current')}
+                      fullWidth
+                      variant="outlined"
+                      autoComplete="current-password"
+                      InputProps={{
+                        className: "rounded-lg"
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="New Password"
+                      type="password"
+                      value={passwords.new}
+                      onChange={handlePasswordChange('new')}
+                      fullWidth
+                      variant="outlined"
+                      autoComplete="new-password"
+                      InputProps={{
+                        className: "rounded-lg"
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="Confirm New Password"
+                      type="password"
+                      value={passwords.confirm}
+                      onChange={handlePasswordChange('confirm')}
+                      fullWidth
+                      variant="outlined"
+                      autoComplete="new-password"
+                      InputProps={{
+                        className: "rounded-lg"
+                      }}
+                    />
+                  </Grid>
+                </Grid>
 
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8">
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={() => navigate('/profile')}
-              fullWidth={window.innerWidth < 640}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              type="submit"
-              disabled={isUpdating}
-              fullWidth={window.innerWidth < 640}
-            >
-              {isUpdating ? 'Updating...' : 'Save Changes'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+                {/* Buttons */}
+                <Box className="mt-10 flex flex-col sm:flex-row justify-end gap-3">
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={() => navigate('/profile')}
+                    className="rounded-lg py-2.5 font-medium border-2"
+                    sx={{ 
+                      borderWidth: '1px',
+                      py: 1.25,
+                      px: 3,
+                      borderRadius: '8px',
+                      textTransform: 'none',
+                      fontWeight: 500
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                    disabled={isUpdating}
+                    className="rounded-lg py-2.5 font-medium shadow-md bg-gradient-to-r from-blue-600 to-indigo-600"
+                    startIcon={<Save />}
+                    sx={{ 
+                      py: 1.25,
+                      px: 3,
+                      borderRadius: '8px',
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      boxShadow: '0 4px 6px rgba(66, 153, 225, 0.2)'
+                    }}
+                  >
+                    {isUpdating ? 'Saving Changes...' : 'Save Changes'}
+                  </Button>
+                </Box>
+              </Box>
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
     </>
   )
 }

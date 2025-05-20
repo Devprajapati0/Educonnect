@@ -247,7 +247,7 @@ const ChatInfoDialog = ({ open, onClose, isGroup, avatar, name, _id,refetch:list
   const allUsersList = allUsers || [];
   // console.log("secete",selectedUsers)
 //   console.log("allUsersList", allUsersList)
-//   console.log("cahtData", chatDetail?.data)
+  console.log("cahtData", chatDetail?.data)
 const handleUpdateMembers = async (updatedMembers) => {
   // console.log("updatedMembers", updatedMembers)
     const data = {
@@ -290,14 +290,26 @@ const currentUser = useSelector((state) => state.auth.user)
 const members = chatDetail?.data?.members || [];
 //  console.log("members", members)
 // const filteredMembers = members.filter(m => m._id !== currentUser._id);
-// console.log("filteredMembers", chatDetail?.data?.addmembersallowed )
+//  console.log("filteredMembers", chatDetail?.data?.addmembersallowed )
+
 const creator = chatDetail?.data?.creator || {};
 const isAdmin = chatDetail?.data?.isAdmin?.includes(currentUser._id);
-const [addMembersAllowed, setAddMembersAllowed] = useState(chatDetail?.data?.addmembersallowed );
-const [sendMessageAllowed, setSendMessageAllowed] = useState(chatDetail?.data?.sendmessageallowed );
+const [addMembersAllowed, setAddMembersAllowed] = useState(chatDetail?.data?.addmembersallowed||false );
+//  console.log(addMembersAllowed)
+
+const [sendMessageAllowed, setSendMessageAllowed] = useState(chatDetail?.data?.sendmessageallowed||false );
+// console.log("filteredMembers", chatDetail?.data?.sendmessageallowed )
+// console.log(sendMessageAllowed) got 
 const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 const [selectedAdmins, setSelectedAdmins] = useState([]);
 const [activeTab, setActiveTab] = useState(0);
+
+useEffect(() => {
+  if (chatDetail?.data) {
+    setAddMembersAllowed(chatDetail.data.addmembersallowed || false);
+    setSendMessageAllowed(chatDetail.data.sendmessageallowed || false);
+  }
+}, [chatDetail?.data]);
 
 const {
   data: mediaMessagesData,
@@ -469,21 +481,43 @@ const handleSendMessagesToggle = async (e) => {
         {tab === 0 && (
   <Stack spacing={3}>
     {/* Creator Info */}
-    <Box>
-      <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-        Creator
-      </Typography>
-      <Stack direction="row" spacing={2} alignItems="center" mt={1}>
-        <Typography variant="body1" color="text.secondary">
-          Name:
-        </Typography>
-        <Typography variant="body1">{creator.fullname}</Typography>
-        <Typography variant="body1" color="text.secondary">
-          Role:
-        </Typography>
-        <Typography variant="body1">{creator.role}</Typography>
-      </Stack>
-    </Box>
+    <Box sx={{ bgcolor: '#F9FAFB', p: 2.5, borderRadius: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary', mb: 2 }}>
+                  Creator
+                </Typography>
+                <Stack 
+                  direction={{ xs: 'column', sm: 'row' }} 
+                  spacing={2} 
+                  alignItems={{ xs: 'flex-start', sm: 'center' }}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: 'text.secondary',
+                        fontWeight: 500
+                      }}
+                    >
+                      Name:
+                    </Typography>
+                    <Typography variant="body1">{creator.fullname}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: 'text.secondary',
+                        fontWeight: 500
+                      }}
+                    >
+                      Role:
+                    </Typography>
+                    <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
+                      {creator.role}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Box>
 
     <Divider sx={{ my: 1 }} />
 

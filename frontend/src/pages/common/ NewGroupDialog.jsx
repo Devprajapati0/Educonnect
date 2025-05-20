@@ -36,6 +36,7 @@ export default function NewGroupDialog({refetch, open, onClose }) {
   const [nextStep, setNextStep] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [search, setSearch] = useState("");
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   const { institution, role } = getInstitutionAndRoleFromPath();
 
@@ -65,57 +66,60 @@ export default function NewGroupDialog({refetch, open, onClose }) {
         : [...prev, user]
     );
   };
-  const [createGroupChat] = useCreateGroupChatMutation();
+  const [createGroupChat,{isLoading:onLoadingChat}] = useCreateGroupChatMutation();
   const dispatch = useDispatch()
   const handleNext = () => setNextStep(true);
   const handleBack = () => setNextStep(false);
   const handleCreate = async(groupData) => {
-     console.log("Group data:", groupData);
-     dispatch(setAvatar({
-          image:groupData.groupImage,
-          chatId:"",
-          name:groupData.groupName
-        }))
-    const members = groupData.selectedUsers.map((user) => ( {
-      _id: user._id,
-      role: user.role,
-      name: user.name,
-      avatar: user.avatar,
-      publicKey: user.publicKey,
-    }));
-    // const image = groupData.groupImage || null;
-    const data={
+    try {
+      setIsCreatingChat(true);
+      dispatch(setAvatar({
+        image: groupData.groupImage,
+        chatId: "",
+        name: groupData.groupName,
+      }));
+  
+      const members = groupData.selectedUsers.map((user) => ({
+        _id: user._id,
+        role: user.role,
+        name: user.name,
+        avatar: user.avatar,
+        publicKey: user.publicKey,
+      }));
+  
+      const data = {
         name: groupData.groupName,
         description: null,
         subdomain: institution,
         role,
-        members: members,
+        members,
         groupchat: true,
         addmembersallowed: groupData.allowAddMembers,
         sendmessageallowed: groupData.allowSendMessages,
         avatar: groupData.groupImage || null,
-    }
-     console.log("data", data)
-    createGroupChat(data)
-    .unwrap()
-    .then((response) => {
-      console.log("Chat created successfully:", response);
-      if(response.success == false){
-        return toast.error(response.message);
+      };
+  
+      const response = await createGroupChat(data).unwrap();
+  
+      if (response.success === false) {
+        toast.error(response.message);
+        return;
       }
+  
       toast.success(response.message);
-      // setFlag(!flag);
-    })
-    .catch((error) => {
+      setGroupName("");
+      setSelectedUsers([]);
+      setNextStep(false);
+      onClose();
+      await refetch();
+    } catch (error) {
       console.error("Error creating chat:", error);
       toast.error("Error creating chat");
-    });
-    setGroupName("");
-    setSelectedUsers([]);
-    setNextStep(false);
-    onClose();
-    await refetch();
+    } finally {
+      setIsCreatingChat(false);
+    }
   };
+
 
   if (isLoading) return <CircularProgress />;
   if (isError)
@@ -267,6 +271,7 @@ export default function NewGroupDialog({refetch, open, onClose }) {
       ) : (
         <GroupDetailsStep
           selectedUsers={selectedUsers}
+          onLoader={onLoadingChat}
           onBack={handleBack}
           onCreate={handleCreate}
           groupName={groupName}

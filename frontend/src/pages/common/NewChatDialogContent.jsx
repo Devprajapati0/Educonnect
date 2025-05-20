@@ -16,8 +16,9 @@ import GroupIcon from "@mui/icons-material/Group";
 import SearchIcon from "@mui/icons-material/Search";
 import NewGroupDialog from "./ NewGroupDialog"; // Adjust the import path as necessary
 import { Key } from "lucide-react";
+import {CircularProgress} from "@mui/material";
 
-export default function NewChatDialogContent({ data, onStartChat,refetch }) {
+export default function NewChatDialogContent({ data, onStartChat,refetch,isChatLoading }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -86,7 +87,7 @@ export default function NewChatDialogContent({ data, onStartChat,refetch }) {
         New Group
       </Button>
 
-      <NewGroupDialog refetch={refetch} open={open} onClose={() => setOpen(false)} />
+      <NewGroupDialog refetch={refetch} open={open} onClose={() => setOpen(false)} onLoadingChat={isChatLoading} />
 
       {/* User List */}
       <Box className="max-h-[300px] overflow-y-auto pr-1">
@@ -109,24 +110,51 @@ export default function NewChatDialogContent({ data, onStartChat,refetch }) {
                   // console.log("user88888", user),
                   <ListItem
                     key={user._id}
+                    disabled={isChatLoading}
                     button
                     onClick={() =>
-                      onStartChat({
-                        _id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        avatar: user.avatar, // Pass avatar
-                        role: user.role,
-                        publicKey: user.publicKey,
-                      })
+                    {
+                      if (!isChatLoading) {
+                        onStartChat({
+                          _id: user._id,
+                          name: user.name,
+                          email: user.email,
+                          avatar: user.avatar,
+                          role: user.role,
+                          publicKey: user.publicKey,
+                        })
+                                          }                    }
                     }
                     sx={{
                       borderRadius: 1,
-                      "&:hover": {
-                        backgroundColor: "#f0f0f0",
-                      },
+          "&:hover": {
+            backgroundColor: isChatLoading ? "transparent" : "#f0f0f0",
+          },
+          cursor: isChatLoading ? "not-allowed" : "pointer",
+          opacity: isChatLoading ? 0.6 : 1,
+          transition: "opacity 0.2s ease",
+          position: "relative",
                     }}
                   >
+                    {isChatLoading && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(255, 255, 255, 0.7)",
+              zIndex: 1,
+              borderRadius: 1,
+            }}
+          >
+            <CircularProgress size={20} />
+          </Box>
+        )}
                     <ListItemAvatar>
                       <Avatar src={user.avatar} alt={user.name}>
                         {user.name?.[0]}

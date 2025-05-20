@@ -20,7 +20,14 @@ const api = createApi({
           }),
           providesTags: ['Institute'],
         }),
-      
+        forgotPassword: builder.mutation({
+          query: (data) => ({
+            url: `/institution/forgot-password`,
+            method: 'POST',
+            body: data,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        }),
         updateInstituteProfile: builder.mutation({
           query: (data) => ({
             url: 'institution/update-profile',
@@ -272,7 +279,7 @@ const api = createApi({
 
 export const {useGetInstituteProfileQuery,useUpdateInstituteProfileMutation,useAddRoleSignupMutation,useUpdateUserPasswordMutation,useGetMyChatsQuery,useGetAllUsersBasedOnRoleQuery,
     useCreateGroupChatMutation,useGetUserForGroupsQuery,useGetMessagesQuery,useGetChatDetailQuery,useSendAttachmentsMutation,useGetUserProfileQuery,useUpdateUserProfileMutation,useUpDateChatDetailMutation
-,useGetChatMediaQuery,useExitGroupMutation,useGetPublicKeyQuery,useDeleteChatMutation,
+,useGetChatMediaQuery,useExitGroupMutation,useGetPublicKeyQuery,useDeleteChatMutation,useForgotPasswordMutation,
 useGetAllUsersforAdminQuery,useDeleteanyChatForAdminMutation,useDeleteUserMutation,useGetDashboardStatsQuery,
 useGetAllChatsofAlluserQuery,useRemoveMemberFromChatMutation,useComplainToAdminMutation,
 useGetAdminsAndStudentsQuery,useGetComplaintsAssignedToMeQuery,useResolveComplaintMutation,useGetMyComplaintsQuery,useLogoutUSerMutation

@@ -10,8 +10,14 @@ import {
   CircularProgress,
   useMediaQuery,
   useTheme,
+  Typography,
+  Divider,
+  Paper,
+  Avatar
 } from "@mui/material"
 import BusinessIcon from "@mui/icons-material/Business"
+import PersonAddIcon from "@mui/icons-material/PersonAdd"
+import CloudUploadIcon from "@mui/icons-material/CloudUpload"
 import toast from "react-hot-toast"
 import { useAddRoleSignupMutation } from "../../store/api/api"
 import Leftbar from "../common/Leftbar"
@@ -148,20 +154,23 @@ function Adduser() {
             position: "fixed",
             top: 0,
             left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(255, 255, 255, 0.7)",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
             zIndex: 9999,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <CircularProgress size={60} />
+          <Paper elevation={6} sx={{ p: 3, borderRadius: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <CircularProgress size={60} />
+            <Typography sx={{ mt: 2, fontWeight: 500 }}>Processing...</Typography>
+          </Paper>
         </Box>
       )}
 
-      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f7f9fc" }}>
         {/* Fixed Leftbar */}
         <Box
           sx={{
@@ -180,106 +189,319 @@ function Adduser() {
         </Box>
 
         <Box
-  sx={{
-    flexGrow: 1,
-    ml: { xs: '60px', sm: '70px' },
-    p: { xs: 1, sm: 2 },
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    minHeight: "100vh",
-    width: "100%",
-  }}
->
-          <Card sx={{ width: "100%", maxWidth: 500 }}>
+          sx={{
+            flexGrow: 1,
+            ml: { xs: '60px', sm: '70px' },
+            p: { xs: 2, sm: 4 },
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "100vh",
+            width: "100%",
+          }}
+        >
+          <Card 
+            sx={{ 
+              width: "100%", 
+              maxWidth: 550,
+              borderRadius: 3,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              overflow: 'visible',
+              position: 'relative',
+              pb: 2
+            }}
+          >
+            <Box
+              sx={{
+                position: 'absolute',
+                top: -30,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 60,
+                height: 60,
+                borderRadius: '50%',
+                bgcolor: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+              }}
+            >
+              <PersonAddIcon sx={{ color: 'white', fontSize: 32 }} />
+            </Box>
+            
             <CardHeader
-              title="Signup"
-              subheader="Create your account"
-              sx={{ textAlign: "center", backgroundColor: "#f5f5f5" }}
+              title={
+                <Typography variant="h5" sx={{ fontWeight: 600, textAlign: "center", mt: 3 }}>
+                  Create Account
+                </Typography>
+              }
+              subheader={
+                <Typography variant="subtitle1" color="text.secondary" sx={{ textAlign: "center" }}>
+                  Join {getSubdomainName()} platform
+                </Typography>
+              }
+              sx={{ pb: 0 }}
             />
-            <CardContent>
-              <Box className="flex flex-col items-center mb-6">
-                <div
-                  className="w-24 h-24 rounded-full border-4 border-gray-300 overflow-hidden shadow-md cursor-pointer relative group"
+            
+            <CardContent sx={{ pt: 1 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}>
+                <Box
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: '50%',
+                    overflow: "hidden",
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                    cursor: "pointer",
+                    position: "relative",
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: avatar ? 'transparent' : '#f0f2f5',
+                    border: '3px solid white',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'scale(1.05)'
+                    }
+                  }}
                   onClick={handleUploadClick}
                 >
                   {avatar ? (
                     <img
                       src={avatar}
                       alt="avatar"
-                      className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-80"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
                     />
                   ) : (
-                    <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400 text-3xl">
-                      <BusinessIcon fontSize="inherit" />
-                    </div>
+                    <BusinessIcon sx={{ fontSize: 40, color: 'text.secondary' }} />
                   )}
                   <input
                     type="file"
                     accept="image/*"
                     ref={fileInputRef}
                     onChange={handleImageChange}
-                    className="hidden"
+                    style={{ display: 'none' }}
                   />
-                </div>
-                <Button onClick={handleUploadClick} size="small" variant="outlined" className="mt-2">
-                  {avatar ? "Change avatar" : "Upload avatar"}
-                </Button>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      bgcolor: 'primary.main',
+                      borderRadius: '50%',
+                      width: 28,
+                      height: 28,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <CloudUploadIcon sx={{ color: 'white', fontSize: 16 }} />
+                  </Box>
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                  {avatar ? "Click to change avatar" : "Click to upload avatar"}
+                </Typography>
               </Box>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <TextField name="name" label="Full Name" value={formData.name} onChange={handleInputChange} required fullWidth size="small" />
-                <TextField name="rollnumber" label="Roll Number" value={formData.rollnumber} onChange={handleInputChange} required fullWidth size="small" />
-                <TextField name="email" label="Email" type="email" value={formData.email} onChange={handleInputChange} required fullWidth size="small" />
-                <TextField name="password" label="Password" type="password" value={formData.password} onChange={handleInputChange} required fullWidth size="small" />
-                <TextField
-                  select
-                  name="role"
-                  label="User Role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  required
-                  fullWidth
-                  size="small"
-                >
-                  {roles.map((role) => (
-                    <MenuItem key={role.value} value={role.value}>
-                      {role.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
+              <Divider sx={{ mb: 3 }} />
 
-                {/* Role-specific fields */}
-                {formData.role === "student" && (
-                  <TextField name="batch" label="Batch" value={formData.batch} onChange={handleInputChange} required fullWidth size="small" />
-                )}
-                {formData.role === "teacher" && (
+              <form onSubmit={handleSubmit}>
+                <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                  <TextField 
+                    name="name" 
+                    label="Full Name" 
+                    value={formData.name} 
+                    onChange={handleInputChange} 
+                    required 
+                    fullWidth 
+                    variant="outlined"
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
+                  <TextField 
+                    name="rollnumber" 
+                    label="Roll Number" 
+                    value={formData.rollnumber} 
+                    onChange={handleInputChange} 
+                    required 
+                    fullWidth 
+                    variant="outlined"
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
+                </Box>
+
+                <Box sx={{ mt: 2, display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                  <TextField 
+                    name="email" 
+                    label="Email" 
+                    type="email" 
+                    value={formData.email} 
+                    onChange={handleInputChange} 
+                    required 
+                    fullWidth 
+                    variant="outlined"
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
+                  <TextField 
+                    name="password" 
+                    label="Password" 
+                    type="password" 
+                    value={formData.password} 
+                    onChange={handleInputChange} 
+                    required 
+                    fullWidth 
+                    variant="outlined"
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
+                </Box>
+
+                <Box sx={{ mt: 2, mb: 3 }}>
                   <TextField
                     select
-                    name="department"
-                    label="Department"
-                    value={formData.department}
+                    name="role"
+                    label="User Role"
+                    value={formData.role}
                     onChange={handleInputChange}
                     required
                     fullWidth
-                    size="small"
+                    variant="outlined"
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
                   >
-                    {departments.map((dept) => (
-                      <MenuItem key={dept} value={dept.toLowerCase()}>
-                        {dept}
+                    {roles.map((role) => (
+                      <MenuItem key={role.value} value={role.value}>
+                        {role.label}
                       </MenuItem>
                     ))}
                   </TextField>
-                )}
-                {formData.role === "parent" && (
-                  <>
-                    <TextField name="parentofemail" label="Student's Email" value={formData.parentofemail} onChange={handleInputChange} required fullWidth size="small" />
-                    <TextField name="parentofname" label="Student's Name" value={formData.parentofname} onChange={handleInputChange} required fullWidth size="small" />
-                  </>
-                )}
+                </Box>
 
-                <Button type="submit" variant="contained" fullWidth size="large">
-                  Sign Up
+                {/* Role-specific fields with animation */}
+                <Box 
+                  sx={{ 
+                    transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out',
+                    maxHeight: formData.role ? '200px' : '0',
+                    opacity: formData.role ? 1 : 0,
+                    overflow: 'hidden',
+                    mb: formData.role ? 3 : 0
+                  }}
+                >
+                  {formData.role === "student" && (
+                    <TextField 
+                      name="batch" 
+                      label="Batch" 
+                      value={formData.batch} 
+                      onChange={handleInputChange} 
+                      required 
+                      fullWidth 
+                      variant="outlined"
+                      sx={{ 
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
+                    />
+                  )}
+                  {formData.role === "teacher" && (
+                    <TextField
+                      select
+                      name="department"
+                      label="Department"
+                      value={formData.department}
+                      onChange={handleInputChange}
+                      required
+                      fullWidth
+                      variant="outlined"
+                      sx={{ 
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
+                    >
+                      {departments.map((dept) => (
+                        <MenuItem key={dept} value={dept.toLowerCase()}>
+                          {dept}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                  {formData.role === "parent" && (
+                    <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                      <TextField 
+                        name="parentofemail" 
+                        label="Student's Email" 
+                        value={formData.parentofemail} 
+                        onChange={handleInputChange} 
+                        required 
+                        fullWidth 
+                        variant="outlined"
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          }
+                        }}
+                      />
+                      <TextField 
+                        name="parentofname" 
+                        label="Student's Name" 
+                        value={formData.parentofname} 
+                        onChange={handleInputChange} 
+                        required 
+                        fullWidth 
+                        variant="outlined"
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          }
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Box>
+
+                <Button 
+                  type="submit" 
+                  variant="contained" 
+                  fullWidth 
+                  sx={{ 
+                    py: 1.5, 
+                    borderRadius: 2, 
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                    '&:hover': {
+                      boxShadow: '0 6px 15px rgba(0,0,0,0.2)',
+                      transform: 'translateY(-2px)'
+                    },
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Create Account
                 </Button>
               </form>
             </CardContent>

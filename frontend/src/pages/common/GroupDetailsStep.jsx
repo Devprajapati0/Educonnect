@@ -16,7 +16,9 @@ export default function GroupDetailsStep({
   onCreate,
   groupName,
   setGroupName,
+  onLoader
 }) {
+  console.log(onLoader)
   const [groupImage, setGroupImage] = useState(null);         // for preview
   const [groupImageFile, setGroupImageFile] = useState(null); // for backend
 
@@ -65,10 +67,10 @@ export default function GroupDetailsStep({
         </Typography>
         <Button
           onClick={handleCreate}
-          disabled={!groupName}
+          disabled={!groupName ||onLoader }
           sx={{ color: '#1976d2', textTransform: 'none' }}
         >
-          Create
+          {onLoader ? 'Creating...' : 'Create'}
         </Button>
       </Box>
 
