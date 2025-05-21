@@ -44,7 +44,7 @@ const ComplaintBox = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { institution, role } = getInstitutionAndRoleFromPath();
-  const apiKey = "mtyzfj577cysz3uiw6y3jqee7qwuz8cv0td50yadjxx5zjny";
+  const apiKey = import.meta.env.VITE_TINY_MCE_API_KEY;
 
   const { data } = useGetAdminsAndStudentsQuery(
     { subdomain: institution, role },

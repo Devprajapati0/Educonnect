@@ -1,8 +1,9 @@
+version: '3.8'
+
 services:
   # MongoDB database
   mongodb:
-    image: mongo:latest
-    container_name: educonnect-mongodb
+    image: mongo
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
@@ -14,23 +15,16 @@ services:
 
   # Backend API service
   backend:
-    image: devprajapati15/educonnect-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     container_name: educonnect-backend
     restart: always
     ports:
       - "3000:3000"
+    env_file:
+      - ./backend/.env
     environment:
-      - CLOUDINARY_API_NAME=dvxmecrkl
-      - CLOUDINARY_API_KEY=619698245722224
-      - CLOUDINARY_API_SECRET=A2Sdbed8Fi9N0m6gzlBdJ0Sjris
-      - FRONTEND_URL=http://localhost:5173
-      - PORT=3000
-      - STRIPE_SECRET_KEY=sk_test_51RFZywIR3kvZWYIJ5V9O7EKvQfywJiJ447vhNNrAUuYu7QeFb35ozRcjWljqYd3Y4nir8OjNfaBKmlJF2NNEwzA600nAdIr9gs
-      - PRO_PLAN_PRICE=100000
-      - INSTITUTE_SECRET=secret
-      - INSTITUT_EXPIRY=10d
-      - USER_SECRET=usersecret
-      - USER_EXPIRY=10d
       - MONGO_URI=mongodb://admin:password@mongodb:27017/?authSource=admin
     depends_on:
       - mongodb
@@ -40,19 +34,20 @@ services:
 
   # Frontend React app (Vite)
   frontend:
-    image: devprajapati15/educonnect-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     container_name: educonnect-frontend
     restart: always
     ports:
-      - "4173:4173"
-    environment:
-      - VITE_DB_NAME=SecureChat
-      - VITE_STORE_NAME=keys
-      - VITE_FRONTEND_URL=https://backend.educonnect.tech/api/v1
-      - VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51RFZywIR3kvZWYIJoa4cAmV8FxMQivdslQsR7RDipajzlbaxplpj0q4cUn6KVECQlkxnVD4NMlFsB4pKxofQZbcp00UQcfKp5v
-      - VITE_TINY_MCE_API_KEY=mtyzfj577cysz3uiw6y3jqee7qwuz8cv0td50yadjxx5zjny
+      - "5173:5173"
+    env_file:
+      - ./frontend/.env
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   mongodb-data:

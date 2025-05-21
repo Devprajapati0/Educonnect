@@ -36,6 +36,7 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+  // console.log(FRONTEND_URL)
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -56,6 +57,7 @@ export default function LoginPage() {
         },
         withCredentials: true,
       });
+      console.log(res);
       
       const data = res.data;
       dispatch(setInstitute({
