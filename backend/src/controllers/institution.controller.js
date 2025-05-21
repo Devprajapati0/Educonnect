@@ -1,6 +1,6 @@
 import { loginSchema, signupSchema, uniqueSubdoamin, updateInstituteProfileSchema } from "../schemas/institution.schema.js"
 import { asynhandler } from "../utils/asynchandler.js"
-import { apiresponse } from "../utils/apiResponse.js"
+import { apiresponse } from "../utils/apiresponse.js"
 import { Institution } from "../models/institution.model.js"
 import { stripe } from "../helpers/stripe.js"
 import bcrypt from "bcryptjs"

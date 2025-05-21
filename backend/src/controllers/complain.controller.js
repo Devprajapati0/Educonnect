@@ -1,5 +1,5 @@
 // complaint.controller.js
-import { apiresponse } from "../utils/apiResponse.js"
+import { apiresponse } from "../utils/apiresponse.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../helpers/cloudinary.js"
 import { Complaint } from "../models/complaint.model.js"

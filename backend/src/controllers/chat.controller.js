@@ -1,5 +1,5 @@
 import { asynhandler } from "../utils/asynchandler.js"
-import { apiresponse } from "../utils/apiResponse.js"
+import { apiresponse } from "../utils/apiresponse.js"
 import { Institution } from "../models/institution.model.js"
 import { createGroupSchema, updatechatSchema } from "../schemas/chat.schema.js"
 import { Chat } from "../models/chat.model.js"

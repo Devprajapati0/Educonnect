@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import {asynhandler} from '../utils/asynchandler.js';
-import {apiresponse} from '../utils/apiResponse.js';
+import {apiresponse} from '../utils/apiresponse.js';
 import dotenv from 'dotenv';
 import { User } from '../models/user.model.js';
 
