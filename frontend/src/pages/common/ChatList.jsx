@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState } from "react";
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Stack,
@@ -27,7 +27,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ChatIcon from "@mui/icons-material/Chat";
 import { useTheme } from "@mui/material/styles";
 
-import { ChatItem } from "./ChatItem.jsx";
+import { ChatItem } from "./Chatitem.jsx";
 import NewChatDialogContent from "./NewChatDialogContent.jsx";
 import {
   useCreateGroupChatMutation,

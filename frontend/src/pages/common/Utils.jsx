@@ -10,7 +10,7 @@ const LeftSidebar = () => {
         width: 80,
         height: "100vh",
         bgcolor: "grey.900",
-        color: "white",
+        color: "white", 
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

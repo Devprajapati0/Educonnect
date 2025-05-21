@@ -1,8 +1,8 @@
 // utils/keysDB.js
 import { openDB } from "idb";
 
-const DB_NAME = import.meta.env.VITE_DB_NAME 
-const STORE_NAME = import.meta.env.VITE_STORE_NAME 
+const DB_NAME = "SecureChat"
+const STORE_NAME = "keys"
 
 export const initDB = async () => {
   return openDB(DB_NAME, 1, {

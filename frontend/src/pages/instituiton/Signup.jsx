@@ -40,7 +40,7 @@ import {
 } from "@mui/icons-material";
 import { loadStripe } from '@stripe/stripe-js';
 import { generateKeyPair } from "../../helpers/key.js";
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe("pk_test_51RFZywIR3kvZWYIJoa4cAmV8FxMQivdslQsR7RDipajzlbaxplpj0q4cUn6KVECQlkxnVD4NMlFsB4pKxofQZbcp00UQcfKp5v");
 import { FRONTEND_URL } from "../../helpers/url.js";
 import { Loader } from "lucide-react";
 import Header from "./Header.jsx";

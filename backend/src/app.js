@@ -12,18 +12,18 @@ import http from 'http';
  import { socketAuthenticator } from './helpers/socket.js';
  import { sendMessageController } from './controllers/message.controller.js';
 
-dotenv.config();
+dotenv.config(); 
 
 const app = express();
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
+    origin: '*',
     credentials: true,
 }));
 
 export const server = http.createServer(app);
 const io = new Server(server,{
     cors:{
-        origin: process.env.FRONTEND_URL,
+        origin: '*',
         credentials: true,
         methods: ["GET", "POST"],
 
